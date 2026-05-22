@@ -53,17 +53,23 @@ class TransactionTest extends TestCase
     /** @test Cobre: usuário não acessa dados de outro usuário */
     public function test_user_cannot_see_other_users_transactions(): void
     {
-        // Gerar transações para userB
-        $this->withToken($this->tokenB)->postJson('/api/wallet/deposit', ['amount' => 500.00]);
-        $this->withToken($this->tokenB)->postJson('/api/wallet/deposit', ['amount' => 200.00]);
+        $this->actingAs($this->userB, 'sanctum')
+            ->postJson('/api/wallet/deposit', [
+                'amount' => 500.00
+            ]);
 
-        // userA não deve ver nada das transações de userB
-        $response = $this->withToken($this->tokenA)
+        $this->actingAs($this->userB, 'sanctum')
+            ->postJson('/api/wallet/deposit', [
+                'amount' => 200.00
+            ]);
+
+        $response = $this->actingAs($this->userA, 'sanctum')
             ->getJson('/api/transactions')
             ->assertStatus(200);
 
         $this->assertEquals(0, $response->json('meta.total'));
     }
+
 
     public function test_unauthenticated_user_cannot_list_transactions(): void
     {

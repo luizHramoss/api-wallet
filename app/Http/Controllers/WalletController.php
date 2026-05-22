@@ -29,7 +29,6 @@ class WalletController extends Controller
     public function show(Request $request): JsonResponse
     {
         $wallet = $request->user()->wallet;
-
         return response()->json([
             'success' => true,
             'message' => 'Saldo consultado com sucesso.',

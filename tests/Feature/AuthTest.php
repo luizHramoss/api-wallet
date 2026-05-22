@@ -23,7 +23,8 @@ class AuthTest extends TestCase
 
         $response->assertStatus(201)
             ->assertJsonStructure([
-                'success', 'message',
+                'success',
+                'message',
                 'data' => ['user' => ['id', 'name', 'email'], 'token'],
             ])
             ->assertJsonPath('success', true);
@@ -56,7 +57,7 @@ class AuthTest extends TestCase
             'password'              => 'password123',
             'password_confirmation' => 'password123',
         ])->assertStatus(422)
-          ->assertJsonPath('success', false);
+            ->assertJsonPath('success', false);
     }
 
     public function test_register_fails_with_short_password(): void
@@ -79,8 +80,8 @@ class AuthTest extends TestCase
             'email'    => $user->email,
             'password' => 'senha123',
         ])->assertStatus(200)
-          ->assertJsonStructure(['data' => ['token']])
-          ->assertJsonPath('success', true);
+            ->assertJsonStructure(['data' => ['token']])
+            ->assertJsonPath('success', true);
     }
 
     public function test_login_fails_with_wrong_password(): void
@@ -91,7 +92,7 @@ class AuthTest extends TestCase
             'email'    => $user->email,
             'password' => 'errada',
         ])->assertStatus(401)
-          ->assertJsonPath('success', false);
+            ->assertJsonPath('success', false);
     }
 
     // ─── Logout ────────────────────────────────────────────────────────────
@@ -106,9 +107,10 @@ class AuthTest extends TestCase
             ->assertStatus(200)
             ->assertJsonPath('success', true);
 
-        // Token deve estar inválido após logout
-        $this->withToken($token)
-            ->getJson('/api/wallet')
-            ->assertStatus(401);
+        auth()->forgetGuards();
+
+        $this->getJson('/api/wallet', [
+            'Authorization' => 'Bearer ' . $token,
+        ])->assertUnauthorized();
     }
 }

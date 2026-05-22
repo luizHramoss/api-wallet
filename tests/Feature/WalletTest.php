@@ -31,7 +31,7 @@ class WalletTest extends TestCase
             ->getJson('/api/wallet')
             ->assertStatus(200)
             ->assertJsonStructure(['data' => ['id', 'balance', 'updated_at']])
-            ->assertJsonPath('data.balance', 0.0);
+            ->assertJsonPath('data.balance', 0);
     }
 
     public function test_unauthenticated_user_cannot_view_wallet(): void
@@ -113,8 +113,8 @@ class WalletTest extends TestCase
             ->postJson('/api/wallet/withdraw', ['amount' => 150.00])
             ->assertStatus(200)
             ->assertJsonPath('data.type', 'debit')
-            ->assertJsonPath('data.amount', 150.0)
-            ->assertJsonPath('data.balance_after', 350.0);
+            ->assertJsonPath('data.amount', 150)
+            ->assertJsonPath('data.balance_after', 350);
 
         $this->assertDatabaseHas('wallets', [
             'user_id' => $this->user->id,
