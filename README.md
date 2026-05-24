@@ -107,7 +107,7 @@ Padrões utilizados:
 | Decisão | Justificativa |
 |---|---|
 | **Service Layer (sem Repository)** | MVP pragmático — Eloquent já é uma abstração suficiente. Repository adicionaria boilerplate sem benefício real neste escopo. |
-| **`bcadd` / `bcsub` para saldo** | Precisão decimal exata. Ponto flutuante nativo pode gerar erros em centavos (ex: `0.1 + 0.2 ≠ 0.3`). |
+| **Controle de saldo com `round()`** | Para simplificar o deploy e evitar dependência da extensão BCMath no ambiente cloud, os cálculos monetários utilizam `round(..., 2)` mantendo precisão adequada para o escopo do MVP. |
 | **`lockForUpdate()` no saque** | Previne race conditions em saques concorrentes — lock pessimista na linha da carteira. |
 | **`balance_after` na transação** | Snapshot do saldo pós-operação. Permite auditoria sem precisar recalcular histórico. |
 | **Sanctum (token)** | Adequado para APIs mobile/SPA. Simples, seguro e sem overhead de OAuth2. |

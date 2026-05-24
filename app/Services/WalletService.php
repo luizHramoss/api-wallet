@@ -35,7 +35,10 @@ class WalletService
             /** @var Wallet $wallet */
             $wallet = Wallet::lockForUpdate()->where('user_id', $user->id)->firstOrFail();
 
-            $wallet->balance = bcadd((string) $wallet->balance, (string) $amount, 2);
+            $wallet->balance = round(
+                (float) $wallet->balance + (float) $amount,
+                2
+            );
             $wallet->save();
 
             return $this->recordTransaction($wallet, 'credit', $amount);
@@ -61,7 +64,10 @@ class WalletService
                 );
             }
 
-            $wallet->balance = bcsub((string) $wallet->balance, (string) $amount, 2);
+            $wallet->balance = round(
+                (float) $wallet->balance - (float) $amount,
+                2
+            );
             $wallet->save();
 
             return $this->recordTransaction($wallet, 'debit', $amount);
@@ -74,7 +80,7 @@ class WalletService
     public function getTransactions(User $user, array $filters = []): LengthAwarePaginator
     {
         $query = Transaction::query()
-            ->whereHas('wallet', fn ($q) => $q->where('user_id', $user->id))
+            ->whereHas('wallet', fn($q) => $q->where('user_id', $user->id))
             ->orderByDesc('created_at');
 
         if (!empty($filters['type'])) {
