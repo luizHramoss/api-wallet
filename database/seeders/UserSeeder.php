@@ -74,9 +74,9 @@ class UserSeeder extends Seeder
 
         foreach ($transactions as $tx) {
             if ($tx['type'] === 'credit') {
-                $runningBalance = bcadd((string) $runningBalance, (string) $tx['amount'], 2);
+                $runningBalance = round($runningBalance + $tx['amount'], 2);
             } else {
-                $runningBalance = bcsub((string) $runningBalance, (string) $tx['amount'], 2);
+                $runningBalance = round($runningBalance - $tx['amount'], 2);
                 if ($runningBalance < 0) {
                     $runningBalance = 0.00;
                 }
