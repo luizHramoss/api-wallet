@@ -34,7 +34,7 @@
 - [Exemplos de Erros](#-exemplos-de-erros)
 - [Testes Automatizados](#-testes-automatizados)
 - [Credenciais Seed](#-credenciais-seed)
-- [Deploy Railway / Render](#-deploy-railway--render)
+- [Deploy Railway ](#-deploy-railway)
 - [Checklist de Produção](#-checklist-de-produção)
 - [Melhorias Futuras](#-melhorias-futuras)
 - [Troubleshooting](#-troubleshooting)
@@ -61,7 +61,7 @@ Cada operação é **atômica** (via `DB::transaction`) e registra um snapshot d
 | Dashboard com totais mensais | ✅ |
 | Documentação Swagger/OpenAPI | ✅ |
 | Testes automatizados (≥ 5) | ✅ |
-| Deploy Railway/Render ready | ✅ |
+| Deploy Railway ready | ✅ |
 
 ---
 
@@ -98,7 +98,7 @@ Padrões utilizados:
 | Documentação | L5-Swagger (OpenAPI 3.0) |
 | Testes | PHPUnit (integrado ao Laravel) |
 | Lint | Laravel Pint |
-| Deploy | Railway ou Render |
+| Deploy | Railway |
 
 ---
 
@@ -529,7 +529,7 @@ Após `php artisan db:seed`:
 
 ---
 
-## 🚂 Deploy Railway / Render
+## 🚂 Deploy Railway
 
 ### Railway
 
@@ -570,9 +570,9 @@ composer install --no-dev --optimize-autoloader && php artisan config:cache && p
 php artisan serve --host=0.0.0.0 --port=$PORT
 ```
 
-### Render
+### 
 
-Criar `render.yaml` na raiz:
+Criar `.yaml` na raiz:
 ```yaml
 services:
   - type: web
