@@ -13,16 +13,19 @@ class TransactionTest extends TestCase
     use RefreshDatabase;
 
     private User $userA;
+
     private User $userB;
+
     private string $tokenA;
+
     private string $tokenB;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->userA  = User::factory()->create();
-        $this->userB  = User::factory()->create();
+        $this->userA = User::factory()->create();
+        $this->userB = User::factory()->create();
 
         Wallet::factory()->withBalance(1000)->create(['user_id' => $this->userA->id]);
         Wallet::factory()->withBalance(1000)->create(['user_id' => $this->userB->id]);
@@ -36,7 +39,7 @@ class TransactionTest extends TestCase
     public function test_user_can_list_own_transactions(): void
     {
         // Gerar transações para userA
-        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit',  ['amount' => 100.00]);
+        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
         $this->withToken($this->tokenA)->postJson('/api/wallet/withdraw', ['amount' => 50.00]);
 
         $response = $this->withToken($this->tokenA)
@@ -55,12 +58,12 @@ class TransactionTest extends TestCase
     {
         $this->actingAs($this->userB, 'sanctum')
             ->postJson('/api/wallet/deposit', [
-                'amount' => 500.00
+                'amount' => 500.00,
             ]);
 
         $this->actingAs($this->userB, 'sanctum')
             ->postJson('/api/wallet/deposit', [
-                'amount' => 200.00
+                'amount' => 200.00,
             ]);
 
         $response = $this->actingAs($this->userA, 'sanctum')
@@ -69,7 +72,6 @@ class TransactionTest extends TestCase
 
         $this->assertEquals(0, $response->json('meta.total'));
     }
-
 
     public function test_unauthenticated_user_cannot_list_transactions(): void
     {
@@ -80,7 +82,7 @@ class TransactionTest extends TestCase
 
     public function test_filter_by_type_credit(): void
     {
-        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit',  ['amount' => 100.00]);
+        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
         $this->withToken($this->tokenA)->postJson('/api/wallet/withdraw', ['amount' => 30.00]);
 
         $response = $this->withToken($this->tokenA)
@@ -93,7 +95,7 @@ class TransactionTest extends TestCase
 
     public function test_filter_by_type_debit(): void
     {
-        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit',  ['amount' => 100.00]);
+        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
         $this->withToken($this->tokenA)->postJson('/api/wallet/withdraw', ['amount' => 30.00]);
 
         $response = $this->withToken($this->tokenA)
@@ -116,7 +118,7 @@ class TransactionTest extends TestCase
         $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
 
         $response = $this->withToken($this->tokenA)
-            ->getJson('/api/transactions?date_from=' . now()->toDateString() . '&date_to=' . now()->toDateString())
+            ->getJson('/api/transactions?date_from='.now()->toDateString().'&date_to='.now()->toDateString())
             ->assertStatus(200);
 
         $this->assertEquals(1, $response->json('meta.total'));
@@ -136,7 +138,7 @@ class TransactionTest extends TestCase
         // Criar 20 transações
         $wallet = $this->userA->wallet;
         Transaction::factory(20)->credit()->create([
-            'wallet_id'    => $wallet->id,
+            'wallet_id' => $wallet->id,
             'balance_after' => 100,
         ]);
 
@@ -146,7 +148,7 @@ class TransactionTest extends TestCase
 
         $this->assertCount(5, $response->json('data'));
         $this->assertEquals(20, $response->json('meta.total'));
-        $this->assertEquals(4,  $response->json('meta.last_page'));
+        $this->assertEquals(4, $response->json('meta.last_page'));
     }
 
     public function test_per_page_cannot_exceed_100(): void

@@ -10,12 +10,12 @@ class TransactionResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'            => $this->id,
-            'type'          => $this->type,
-            'amount'        => (float) $this->amount,
+            'id' => $this->id,
+            'type' => $this->type,
+            'amount' => (float) $this->amount,
             'balance_after' => (float) $this->balance_after,
-            'description'   => $this->description,
-            'created_at'    => $this->created_at->toIso8601String(),
+            'description' => $this->description,
+            'created_at' => $this->created_at->toIso8601String(),
         ];
     }
 }

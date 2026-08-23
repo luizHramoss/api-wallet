@@ -9,15 +9,15 @@ class TransactionFactory extends Factory
 {
     public function definition(): array
     {
-        $type   = fake()->randomElement(['credit', 'debit']);
+        $type = fake()->randomElement(['credit', 'debit']);
         $amount = fake()->randomFloat(2, 0.01, 1000);
 
         return [
-            'wallet_id'    => Wallet::factory(),
-            'type'         => $type,
-            'amount'       => $amount,
+            'wallet_id' => Wallet::factory(),
+            'type' => $type,
+            'amount' => $amount,
             'balance_after' => fake()->randomFloat(2, 0, 5000),
-            'description'  => $type === 'credit' ? 'Depósito' : 'Saque',
+            'description' => $type === 'credit' ? 'Depósito' : 'Saque',
         ];
     }
 

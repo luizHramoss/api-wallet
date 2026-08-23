@@ -15,9 +15,9 @@ class AuthTest extends TestCase
     public function test_user_can_register_successfully(): void
     {
         $response = $this->postJson('/api/auth/register', [
-            'name'                  => 'João Silva',
-            'email'                 => 'joao@email.com',
-            'password'              => 'password123',
+            'name' => 'João Silva',
+            'email' => 'joao@email.com',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
 
@@ -36,9 +36,9 @@ class AuthTest extends TestCase
     public function test_wallet_is_created_with_zero_balance_on_register(): void
     {
         $this->postJson('/api/auth/register', [
-            'name'                  => 'Maria',
-            'email'                 => 'maria@email.com',
-            'password'              => 'password123',
+            'name' => 'Maria',
+            'email' => 'maria@email.com',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
 
@@ -52,9 +52,9 @@ class AuthTest extends TestCase
         User::factory()->create(['email' => 'dup@email.com']);
 
         $this->postJson('/api/auth/register', [
-            'name'                  => 'Outro',
-            'email'                 => 'dup@email.com',
-            'password'              => 'password123',
+            'name' => 'Outro',
+            'email' => 'dup@email.com',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
         ])->assertStatus(422)
             ->assertJsonPath('success', false);
@@ -63,9 +63,9 @@ class AuthTest extends TestCase
     public function test_register_fails_with_short_password(): void
     {
         $this->postJson('/api/auth/register', [
-            'name'                  => 'Teste',
-            'email'                 => 'teste@email.com',
-            'password'              => '123',
+            'name' => 'Teste',
+            'email' => 'teste@email.com',
+            'password' => '123',
             'password_confirmation' => '123',
         ])->assertStatus(422);
     }
@@ -77,7 +77,7 @@ class AuthTest extends TestCase
         $user = User::factory()->create(['password' => bcrypt('senha123')]);
 
         $this->postJson('/api/auth/login', [
-            'email'    => $user->email,
+            'email' => $user->email,
             'password' => 'senha123',
         ])->assertStatus(200)
             ->assertJsonStructure(['data' => ['token']])
@@ -89,7 +89,7 @@ class AuthTest extends TestCase
         $user = User::factory()->create(['password' => bcrypt('correta')]);
 
         $this->postJson('/api/auth/login', [
-            'email'    => $user->email,
+            'email' => $user->email,
             'password' => 'errada',
         ])->assertStatus(401)
             ->assertJsonPath('success', false);
@@ -99,7 +99,7 @@ class AuthTest extends TestCase
 
     public function test_user_can_logout(): void
     {
-        $user  = User::factory()->create();
+        $user = User::factory()->create();
         $token = $user->createToken('test')->plainTextToken;
 
         $this->withToken($token)
@@ -110,7 +110,7 @@ class AuthTest extends TestCase
         auth()->forgetGuards();
 
         $this->getJson('/api/wallet', [
-            'Authorization' => 'Bearer ' . $token,
+            'Authorization' => 'Bearer '.$token,
         ])->assertUnauthorized();
     }
 }

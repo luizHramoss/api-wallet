@@ -2,8 +2,6 @@
 
 namespace App\Exceptions;
 
-use App\Exceptions\InsufficientBalanceException;
-use App\Exceptions\InvalidTransactionException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
@@ -37,7 +35,7 @@ class Handler extends ExceptionHandler
             return response()->json([
                 'success' => false,
                 'message' => 'Dados inválidos.',
-                'errors'  => $e->errors(),
+                'errors' => $e->errors(),
             ], 422);
         }
 

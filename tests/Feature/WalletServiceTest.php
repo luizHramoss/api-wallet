@@ -15,6 +15,7 @@ class WalletServiceTest extends TestCase
     use RefreshDatabase;
 
     private WalletService $service;
+
     private User $user;
 
     protected function setUp(): void
@@ -22,7 +23,7 @@ class WalletServiceTest extends TestCase
         parent::setUp();
 
         $this->service = app(WalletService::class);
-        $this->user    = User::factory()->create();
+        $this->user = User::factory()->create();
 
         Wallet::factory()->empty()->create(['user_id' => $this->user->id]);
     }
@@ -60,9 +61,9 @@ class WalletServiceTest extends TestCase
 
         $this->assertEquals('300.00', $wallet->balance);
         $this->assertDatabaseHas('transactions', [
-            'wallet_id'    => $wallet->id,
-            'type'         => 'credit',
-            'amount'       => 300.00,
+            'wallet_id' => $wallet->id,
+            'type' => 'credit',
+            'amount' => 300.00,
             'balance_after' => 300.00,
         ]);
     }
@@ -89,14 +90,14 @@ class WalletServiceTest extends TestCase
         $this->assertEquals('100.00', $this->user->wallet->fresh()->balance);
         $this->assertDatabaseMissing('transactions', [
             'wallet_id' => $this->user->wallet->id,
-            'type'      => 'debit',
+            'type' => 'debit',
         ]);
     }
 
     public function test_create_wallet_for_user_sets_zero_balance(): void
     {
         $newUser = User::factory()->create();
-        $wallet  = $this->service->createForUser($newUser);
+        $wallet = $this->service->createForUser($newUser);
 
         $this->assertEquals('0.00', $wallet->balance);
         $this->assertEquals($newUser->id, $wallet->user_id);

@@ -19,9 +19,9 @@ class Transaction extends Model
     ];
 
     protected $casts = [
-        'amount'        => 'decimal:2',
+        'amount' => 'decimal:2',
         'balance_after' => 'decimal:2',
-        'created_at'    => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     public function wallet(): BelongsTo

@@ -58,9 +58,9 @@ class WalletService
             /** @var Wallet $wallet */
             $wallet = Wallet::lockForUpdate()->where('user_id', $user->id)->firstOrFail();
 
-            if (!$wallet->hasSufficientBalance($amount)) {
+            if (! $wallet->hasSufficientBalance($amount)) {
                 throw new InsufficientBalanceException(
-                    "Saldo insuficiente. Saldo disponível: R$ " . number_format($wallet->balance, 2, ',', '.')
+                    'Saldo insuficiente. Saldo disponível: R$ '.number_format($wallet->balance, 2, ',', '.')
                 );
             }
 
@@ -80,18 +80,18 @@ class WalletService
     public function getTransactions(User $user, array $filters = []): LengthAwarePaginator
     {
         $query = Transaction::query()
-            ->whereHas('wallet', fn($q) => $q->where('user_id', $user->id))
+            ->whereHas('wallet', fn ($q) => $q->where('user_id', $user->id))
             ->orderByDesc('created_at');
 
-        if (!empty($filters['type'])) {
+        if (! empty($filters['type'])) {
             $query->where('type', $filters['type']);
         }
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('created_at', '>=', Carbon::parse($filters['date_from'])->startOfDay());
         }
 
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->whereDate('created_at', '<=', Carbon::parse($filters['date_to'])->endOfDay());
         }
 
@@ -108,7 +108,7 @@ class WalletService
         $wallet = $user->wallet;
 
         $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth   = Carbon::now()->endOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
 
         $monthTransactions = Transaction::query()
             ->where('wallet_id', $wallet->id)
@@ -129,14 +129,14 @@ class WalletService
             ->get();
 
         return [
-            'balance'          => $wallet->balance,
+            'balance' => $wallet->balance,
             'last_transactions' => $lastTransactions,
-            'monthly_summary'  => [
+            'monthly_summary' => [
                 'total_deposited' => round((float) $totalDeposited, 2),
                 'total_withdrawn' => round((float) $totalWithdrawn, 2),
-                'period'          => [
+                'period' => [
                     'from' => $startOfMonth->toDateString(),
-                    'to'   => $endOfMonth->toDateString(),
+                    'to' => $endOfMonth->toDateString(),
                 ],
             ],
         ];
@@ -148,11 +148,11 @@ class WalletService
     private function recordTransaction(Wallet $wallet, string $type, float $amount): Transaction
     {
         return Transaction::create([
-            'wallet_id'    => $wallet->id,
-            'type'         => $type,
-            'amount'       => $amount,
+            'wallet_id' => $wallet->id,
+            'type' => $type,
+            'amount' => $amount,
             'balance_after' => $wallet->balance,
-            'description'  => $type === 'credit' ? 'Depósito' : 'Saque',
+            'description' => $type === 'credit' ? 'Depósito' : 'Saque',
         ]);
     }
 

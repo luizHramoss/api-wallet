@@ -6,7 +6,6 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class UserSeeder extends Seeder
 {
@@ -16,7 +15,7 @@ class UserSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'admin@wallet.com'],
             [
-                'name'     => 'Admin Demo',
+                'name' => 'Admin Demo',
                 'password' => bcrypt('password'),
             ]
         );
@@ -33,7 +32,7 @@ class UserSeeder extends Seeder
         $user = User::firstOrCreate(
             ['email' => 'user@wallet.com'],
             [
-                'name'     => 'Usuário Teste',
+                'name' => 'Usuário Teste',
                 'password' => bcrypt('password'),
             ]
         );
@@ -83,13 +82,13 @@ class UserSeeder extends Seeder
             }
 
             Transaction::create([
-                'wallet_id'    => $wallet->id,
-                'type'         => $tx['type'],
-                'amount'       => $tx['amount'],
+                'wallet_id' => $wallet->id,
+                'type' => $tx['type'],
+                'amount' => $tx['amount'],
                 'balance_after' => $runningBalance,
-                'description'  => $tx['type'] === 'credit' ? 'Depósito' : 'Saque',
-                'created_at'   => now()->subDays($tx['days_ago']),
-                'updated_at'   => now()->subDays($tx['days_ago']),
+                'description' => $tx['type'] === 'credit' ? 'Depósito' : 'Saque',
+                'created_at' => now()->subDays($tx['days_ago']),
+                'updated_at' => now()->subDays($tx['days_ago']),
             ]);
         }
     }
