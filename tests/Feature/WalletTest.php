@@ -42,7 +42,7 @@ class WalletTest extends TestCase
 
     // ─── Depósito ──────────────────────────────────────────────────────────
 
-    /** @test Cobre: depósito com sucesso */
+    // Cobre: depósito com sucesso
     public function test_deposit_increases_wallet_balance(): void
     {
         $this->withToken($this->token)
@@ -103,7 +103,7 @@ class WalletTest extends TestCase
 
     // ─── Saque ─────────────────────────────────────────────────────────────
 
-    /** @test Cobre: atualização correta do saldo após saque */
+    // Cobre: atualização correta do saldo após saque
     public function test_withdraw_decreases_wallet_balance(): void
     {
         // Primeiro deposita
@@ -123,7 +123,7 @@ class WalletTest extends TestCase
         ]);
     }
 
-    /** @test Cobre: saque com saldo insuficiente */
+    // Cobre: saque com saldo insuficiente
     public function test_withdraw_fails_when_balance_is_insufficient(): void
     {
         // Carteira começa vazia (saldo = 0)
