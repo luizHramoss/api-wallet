@@ -28,10 +28,10 @@ class TransactionRequest extends FormRequest
     {
         return [
             'amount.required' => 'O valor é obrigatório.',
-            'amount.numeric'  => 'O valor deve ser numérico.',
-            'amount.min'      => 'O valor mínimo permitido é R$ 0,01.',
-            'amount.max'      => 'O valor excede o limite permitido.',
-            'amount.regex'    => 'O valor deve ter no máximo 2 casas decimais.',
+            'amount.numeric' => 'O valor deve ser numérico.',
+            'amount.min' => 'O valor mínimo permitido é R$ 0,01.',
+            'amount.max' => 'O valor excede o limite permitido.',
+            'amount.regex' => 'O valor deve ter no máximo 2 casas decimais.',
         ];
     }
 }

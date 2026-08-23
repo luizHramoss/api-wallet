@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
-    Route::post('login',    [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login']);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
@@ -22,9 +22,9 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('wallet')->group(function () {
-        Route::get('/',          [WalletController::class, 'show']);
+        Route::get('/', [WalletController::class, 'show']);
         Route::get('/dashboard', [WalletController::class, 'dashboard']);
-        Route::post('/deposit',  [WalletController::class, 'deposit']);
+        Route::post('/deposit', [WalletController::class, 'deposit']);
         Route::post('/withdraw', [WalletController::class, 'withdraw']);
     });
 

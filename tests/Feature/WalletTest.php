@@ -12,13 +12,14 @@ class WalletTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private string $token;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user  = User::factory()->create();
+        $this->user = User::factory()->create();
         Wallet::factory()->empty()->create(['user_id' => $this->user->id]);
         $this->token = $this->user->createToken('test')->plainTextToken;
     }
@@ -95,8 +96,8 @@ class WalletTest extends TestCase
 
         $this->assertDatabaseHas('transactions', [
             'wallet_id' => $this->user->wallet->id,
-            'type'      => 'credit',
-            'amount'    => 300.00,
+            'type' => 'credit',
+            'amount' => 300.00,
         ]);
     }
 
@@ -170,8 +171,8 @@ class WalletTest extends TestCase
 
         $this->assertDatabaseHas('transactions', [
             'wallet_id' => $this->user->wallet->id,
-            'type'      => 'debit',
-            'amount'    => 75.00,
+            'type' => 'debit',
+            'amount' => 75.00,
         ]);
     }
 
@@ -197,8 +198,8 @@ class WalletTest extends TestCase
 
     public function test_dashboard_monthly_totals_are_correct(): void
     {
-        $this->withToken($this->token)->postJson('/api/wallet/deposit',  ['amount' => 500.00]);
-        $this->withToken($this->token)->postJson('/api/wallet/deposit',  ['amount' => 300.00]);
+        $this->withToken($this->token)->postJson('/api/wallet/deposit', ['amount' => 500.00]);
+        $this->withToken($this->token)->postJson('/api/wallet/deposit', ['amount' => 300.00]);
         $this->withToken($this->token)->postJson('/api/wallet/withdraw', ['amount' => 200.00]);
 
         $response = $this->withToken($this->token)
