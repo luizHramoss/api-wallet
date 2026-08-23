@@ -16,7 +16,7 @@ RUN composer dump-autoload --optimize --no-dev
 # ---------- Stage 2: Runtime image ----------
 FROM php:8.2-apache
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
         libzip-dev \
         libpng-dev \
         libonig-dev \
