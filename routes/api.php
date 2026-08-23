@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\MetricsController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Route;
 | API Routes
 |--------------------------------------------------------------------------
 */
+
+Route::get('/metrics', [MetricsController::class, 'index']);
 
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
