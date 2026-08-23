@@ -10,37 +10,34 @@ use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use OpenApi\Attributes as OA;
 
-/**
- * @OA\Tag(name="Auth", description="Autenticação de usuários")
- */
+#[OA\Tag(name: 'Auth', description: 'Autenticação de usuários')]
 class AuthController extends Controller
 {
     public function __construct(private readonly WalletService $walletService) {}
 
-    /**
-     * @OA\Post(
-     *     path="/api/auth/register",
-     *     tags={"Auth"},
-     *     summary="Registrar novo usuário",
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\JsonContent(
-     *             required={"name","email","password","password_confirmation"},
-     *
-     *             @OA\Property(property="name", type="string", example="João Silva"),
-     *             @OA\Property(property="email", type="string", format="email", example="joao@email.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="senha123"),
-     *             @OA\Property(property="password_confirmation", type="string", format="password", example="senha123")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=201, description="Usuário registrado com sucesso"),
-     *     @OA\Response(response=422, description="Dados inválidos")
-     * )
-     */
+    #[OA\Post(
+        path: '/api/auth/register',
+        tags: ['Auth'],
+        summary: 'Registrar novo usuário',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['name', 'email', 'password', 'password_confirmation'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', example: 'João Silva'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'joao@email.com'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'senha123'),
+                    new OA\Property(property: 'password_confirmation', type: 'string', format: 'password', example: 'senha123'),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Usuário registrado com sucesso'),
+            new OA\Response(response: 422, description: 'Dados inválidos'),
+        ],
+    )]
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::create($request->validated());
@@ -59,27 +56,25 @@ class AuthController extends Controller
         ], 201);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/auth/login",
-     *     tags={"Auth"},
-     *     summary="Login do usuário",
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\JsonContent(
-     *             required={"email","password"},
-     *
-     *             @OA\Property(property="email", type="string", format="email", example="joao@email.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="senha123")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=200, description="Login realizado com sucesso"),
-     *     @OA\Response(response=401, description="Credenciais inválidas")
-     * )
-     */
+    #[OA\Post(
+        path: '/api/auth/login',
+        tags: ['Auth'],
+        summary: 'Login do usuário',
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email', 'password'],
+                properties: [
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'joao@email.com'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'senha123'),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Login realizado com sucesso'),
+            new OA\Response(response: 401, description: 'Credenciais inválidas'),
+        ],
+    )]
     public function login(LoginRequest $request): JsonResponse
     {
         if (! Auth::attempt($request->only('email', 'password'))) {
@@ -103,17 +98,16 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/auth/logout",
-     *     tags={"Auth"},
-     *     summary="Logout do usuário",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Response(response=200, description="Logout realizado com sucesso"),
-     *     @OA\Response(response=401, description="Não autenticado")
-     * )
-     */
+    #[OA\Post(
+        path: '/api/auth/logout',
+        tags: ['Auth'],
+        summary: 'Logout do usuário',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Logout realizado com sucesso'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ],
+    )]
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();

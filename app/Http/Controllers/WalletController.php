@@ -8,25 +8,23 @@ use App\Http\Resources\WalletResource;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
-/**
- * @OA\Tag(name="Wallet", description="Operações da carteira digital")
- */
+#[OA\Tag(name: 'Wallet', description: 'Operações da carteira digital')]
 class WalletController extends Controller
 {
     public function __construct(private readonly WalletService $walletService) {}
 
-    /**
-     * @OA\Get(
-     *     path="/api/wallet",
-     *     tags={"Wallet"},
-     *     summary="Consultar saldo da carteira",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Response(response=200, description="Saldo consultado com sucesso"),
-     *     @OA\Response(response=401, description="Não autenticado")
-     * )
-     */
+    #[OA\Get(
+        path: '/api/wallet',
+        tags: ['Wallet'],
+        summary: 'Consultar saldo da carteira',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Saldo consultado com sucesso'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ],
+    )]
     public function show(Request $request): JsonResponse
     {
         $wallet = $request->user()->wallet;
@@ -38,28 +36,26 @@ class WalletController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/wallet/deposit",
-     *     tags={"Wallet"},
-     *     summary="Realizar depósito",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\JsonContent(
-     *             required={"amount"},
-     *
-     *             @OA\Property(property="amount", type="number", format="float", example=100.50)
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=200, description="Depósito realizado com sucesso"),
-     *     @OA\Response(response=422, description="Valor inválido"),
-     *     @OA\Response(response=401, description="Não autenticado")
-     * )
-     */
+    #[OA\Post(
+        path: '/api/wallet/deposit',
+        tags: ['Wallet'],
+        summary: 'Realizar depósito',
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['amount'],
+                properties: [
+                    new OA\Property(property: 'amount', type: 'number', format: 'float', example: 100.50),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Depósito realizado com sucesso'),
+            new OA\Response(response: 422, description: 'Valor inválido'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ],
+    )]
     public function deposit(TransactionRequest $request): JsonResponse
     {
         $transaction = $this->walletService->deposit(
@@ -74,28 +70,26 @@ class WalletController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/wallet/withdraw",
-     *     tags={"Wallet"},
-     *     summary="Realizar saque",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\RequestBody(
-     *         required=true,
-     *
-     *         @OA\JsonContent(
-     *             required={"amount"},
-     *
-     *             @OA\Property(property="amount", type="number", format="float", example=50.00)
-     *         )
-     *     ),
-     *
-     *     @OA\Response(response=200, description="Saque realizado com sucesso"),
-     *     @OA\Response(response=422, description="Saldo insuficiente ou valor inválido"),
-     *     @OA\Response(response=401, description="Não autenticado")
-     * )
-     */
+    #[OA\Post(
+        path: '/api/wallet/withdraw',
+        tags: ['Wallet'],
+        summary: 'Realizar saque',
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['amount'],
+                properties: [
+                    new OA\Property(property: 'amount', type: 'number', format: 'float', example: 50.00),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Saque realizado com sucesso'),
+            new OA\Response(response: 422, description: 'Saldo insuficiente ou valor inválido'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ],
+    )]
     public function withdraw(TransactionRequest $request): JsonResponse
     {
         $transaction = $this->walletService->withdraw(
@@ -110,17 +104,16 @@ class WalletController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/wallet/dashboard",
-     *     tags={"Wallet"},
-     *     summary="Dashboard da carteira",
-     *     security={{"sanctum":{}}},
-     *
-     *     @OA\Response(response=200, description="Dashboard carregado com sucesso"),
-     *     @OA\Response(response=401, description="Não autenticado")
-     * )
-     */
+    #[OA\Get(
+        path: '/api/wallet/dashboard',
+        tags: ['Wallet'],
+        summary: 'Dashboard da carteira',
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dashboard carregado com sucesso'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ],
+    )]
     public function dashboard(Request $request): JsonResponse
     {
         $data = $this->walletService->getDashboard($request->user());

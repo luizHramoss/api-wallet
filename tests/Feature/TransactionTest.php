@@ -53,7 +53,7 @@ class TransactionTest extends TestCase
         $this->assertEquals(2, $response->json('meta.total'));
     }
 
-    /** @test Cobre: usuário não acessa dados de outro usuário */
+    // Cobre: usuário não acessa dados de outro usuário
     public function test_user_cannot_see_other_users_transactions(): void
     {
         $this->actingAs($this->userB, 'sanctum')

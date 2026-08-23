@@ -28,7 +28,7 @@ class WalletServiceTest extends TestCase
         Wallet::factory()->empty()->create(['user_id' => $this->user->id]);
     }
 
-    /** @test Cobre: rollback em falha durante operação financeira */
+    // Cobre: rollback em falha durante operação financeira
     public function test_deposit_rolls_back_on_database_failure(): void
     {
         $initialBalance = $this->user->wallet->balance;
@@ -52,7 +52,7 @@ class WalletServiceTest extends TestCase
         }
     }
 
-    /** @test Cobre: atomicidade real com transação DB */
+    // Cobre: atomicidade real com transação DB
     public function test_deposit_and_transaction_are_atomic(): void
     {
         $this->service->deposit($this->user, 300.00);
@@ -68,7 +68,7 @@ class WalletServiceTest extends TestCase
         ]);
     }
 
-    /** @test Cobre: saque com saldo insuficiente lança exception */
+    // Cobre: saque com saldo insuficiente lança exception
     public function test_withdraw_throws_insufficient_balance_exception(): void
     {
         $this->expectException(InsufficientBalanceException::class);
@@ -76,7 +76,7 @@ class WalletServiceTest extends TestCase
         $this->service->withdraw($this->user, 0.01);
     }
 
-    /** @test Cobre: saldo não é alterado após tentativa de saque inválida */
+    // Cobre: saldo não é alterado após tentativa de saque inválida
     public function test_balance_unchanged_after_failed_withdraw(): void
     {
         $this->service->deposit($this->user, 100.00);
