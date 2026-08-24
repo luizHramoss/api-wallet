@@ -18,6 +18,149 @@
         }
     ],
     "paths": {
+        "/api/accounts": {
+            "get": {
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Listar contas do usuário",
+                "operationId": "13efa5706d1fae14fc1cf87c9f6b1427",
+                "responses": {
+                    "200": {
+                        "description": "Contas listadas com sucesso"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Criar nova conta",
+                "operationId": "e974666bc6c050296a8ee09a3ab6533f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Nubank"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "checking",
+                                            "savings",
+                                            "cash",
+                                            "investment"
+                                        ]
+                                    },
+                                    "balance": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 0
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "example": "#8A05BE"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Conta criada com sucesso"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/accounts/{account}": {
+            "delete": {
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Arquivar conta",
+                "description": "A conta é arquivada (soft), não excluída - preserva o histórico de transações.",
+                "operationId": "a30295a60453fd97c43c5ffd510e9858",
+                "parameters": [
+                    {
+                        "name": "account",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Conta arquivada com sucesso"
+                    },
+                    "404": {
+                        "description": "Conta não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Accounts"
+                ],
+                "summary": "Atualizar conta",
+                "operationId": "060f4c0a36626cfe412a32a49a70ed27",
+                "parameters": [
+                    {
+                        "name": "account",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Conta atualizada com sucesso"
+                    },
+                    "404": {
+                        "description": "Conta não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/auth/register": {
             "post": {
                 "tags": [
@@ -137,6 +280,349 @@
                 ]
             }
         },
+        "/api/categories": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Listar categorias do usuário",
+                "operationId": "3f5817a34833d0a1f4af4548dd3aeaba",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "income",
+                                "expense"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categorias listadas com sucesso"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Criar categoria",
+                "operationId": "71fcad552bb0eaba9fb191fd8d8dcab0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Alimentação"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "income",
+                                            "expense"
+                                        ]
+                                    },
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "icon": {
+                                        "type": "string",
+                                        "example": "🍔"
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "example": "#F59E0B"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Categoria criada com sucesso"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/categories/{category}": {
+            "delete": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Excluir categoria",
+                "description": "Transações e subcategorias vinculadas ficam sem categoria (não são excluídas).",
+                "operationId": "d9ecd5c4a74c4d75339251863eedc08c",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categoria excluída com sucesso"
+                    },
+                    "404": {
+                        "description": "Categoria não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Atualizar categoria",
+                "operationId": "f6cb36bb8aedb9159d7b30573767faf1",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categoria atualizada com sucesso"
+                    },
+                    "404": {
+                        "description": "Categoria não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/dashboard": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Dashboard consolidado",
+                "operationId": "f9ae6bf029fd5455620e57be01c3b831",
+                "responses": {
+                    "200": {
+                        "description": "Dashboard carregado com sucesso"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/recurring-bills": {
+            "get": {
+                "tags": [
+                    "RecurringBills"
+                ],
+                "summary": "Listar contas fixas do usuário",
+                "operationId": "b1fff6f9b6e18927a8218c46c4dc027b",
+                "responses": {
+                    "200": {
+                        "description": "Contas fixas listadas com sucesso"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "RecurringBills"
+                ],
+                "summary": "Criar conta fixa",
+                "operationId": "7cca992ae5592026a1de6f8fb421b82f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "account_id",
+                                    "name",
+                                    "type",
+                                    "amount",
+                                    "day_of_month",
+                                    "start_date"
+                                ],
+                                "properties": {
+                                    "account_id": {
+                                        "type": "integer"
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Aluguel"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "income",
+                                            "expense"
+                                        ]
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 1500
+                                    },
+                                    "day_of_month": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "paused",
+                                            "cancelled"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Conta fixa criada com sucesso"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/recurring-bills/{recurring_bill}": {
+            "delete": {
+                "tags": [
+                    "RecurringBills"
+                ],
+                "summary": "Excluir conta fixa",
+                "description": "Ocorrências (transações) já geradas continuam existindo, só perdem o vínculo.",
+                "operationId": "d5f2de909bfe6ccfd1780d94264592e1",
+                "parameters": [
+                    {
+                        "name": "recurring_bill",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Conta fixa excluída com sucesso"
+                    },
+                    "404": {
+                        "description": "Conta fixa não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "RecurringBills"
+                ],
+                "summary": "Atualizar conta fixa",
+                "operationId": "7c5128502e7e6de4dfa6a2f173a59b73",
+                "parameters": [
+                    {
+                        "name": "recurring_bill",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Conta fixa atualizada com sucesso"
+                    },
+                    "404": {
+                        "description": "Conta fixa não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/transactions": {
             "get": {
                 "tags": [
@@ -172,6 +658,14 @@
                     },
                     {
                         "name": "category_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "account_id",
                         "in": "query",
                         "required": false,
                         "schema": {
@@ -221,50 +715,62 @@
                         "sanctum": []
                     }
                 ]
-            }
-        },
-        "/api/wallet": {
-            "get": {
-                "tags": [
-                    "Wallet"
-                ],
-                "summary": "Consultar saldo da carteira",
-                "operationId": "b0aeab5a5b4b667ad1a4726d02a324cf",
-                "responses": {
-                    "200": {
-                        "description": "Saldo consultado com sucesso"
-                    },
-                    "401": {
-                        "description": "Não autenticado"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/wallet/deposit": {
+            },
             "post": {
                 "tags": [
-                    "Wallet"
+                    "Transactions"
                 ],
-                "summary": "Realizar depósito",
-                "operationId": "506845afd12f94e48ec2a586dfb9ee86",
+                "summary": "Criar transação (receita, despesa ou transferência)",
+                "operationId": "ab765dced58cfe2f620929db31452145",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "account_id",
+                                    "type",
                                     "amount"
                                 ],
                                 "properties": {
+                                    "account_id": {
+                                        "type": "integer"
+                                    },
+                                    "to_account_id": {
+                                        "description": "Obrigatório quando type=transfer",
+                                        "type": "integer"
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "income",
+                                            "expense",
+                                            "transfer"
+                                        ]
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "planned",
+                                            "realized"
+                                        ]
+                                    },
                                     "amount": {
                                         "type": "number",
                                         "format": "float",
-                                        "example": 100.5
+                                        "example": 150
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "occurred_at": {
+                                        "type": "string",
+                                        "format": "date"
                                     }
                                 },
                                 "type": "object"
@@ -273,14 +779,11 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Depósito realizado com sucesso"
+                    "201": {
+                        "description": "Transação criada com sucesso"
                     },
                     "422": {
-                        "description": "Valor inválido"
-                    },
-                    "401": {
-                        "description": "Não autenticado"
+                        "description": "Dados inválidos"
                     }
                 },
                 "security": [
@@ -290,42 +793,30 @@
                 ]
             }
         },
-        "/api/wallet/withdraw": {
-            "post": {
+        "/api/transactions/{transaction}": {
+            "delete": {
                 "tags": [
-                    "Wallet"
+                    "Transactions"
                 ],
-                "summary": "Realizar saque",
-                "operationId": "73405c27b66fe831f83304cefd43c831",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "amount"
-                                ],
-                                "properties": {
-                                    "amount": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 50
-                                    }
-                                },
-                                "type": "object"
-                            }
+                "summary": "Excluir transação",
+                "description": "Reverte o impacto no saldo da conta se a transação estava realizada.",
+                "operationId": "5ac55b483b75b2b80a812c542c974181",
+                "parameters": [
+                    {
+                        "name": "transaction",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
-                },
+                ],
                 "responses": {
                     "200": {
-                        "description": "Saque realizado com sucesso"
+                        "description": "Transação excluída com sucesso"
                     },
-                    "422": {
-                        "description": "Saldo insuficiente ou valor inválido"
-                    },
-                    "401": {
-                        "description": "Não autenticado"
+                    "404": {
+                        "description": "Transação não encontrada"
                     }
                 },
                 "security": [
@@ -333,21 +824,33 @@
                         "sanctum": []
                     }
                 ]
-            }
-        },
-        "/api/wallet/dashboard": {
-            "get": {
+            },
+            "patch": {
                 "tags": [
-                    "Wallet"
+                    "Transactions"
                 ],
-                "summary": "Dashboard da carteira",
-                "operationId": "21162c80cea1b43d8863afc23522c736",
+                "summary": "Atualizar transação",
+                "description": "Transferências não podem ser editadas por aqui - exclua e crie novamente.",
+                "operationId": "9a24513f2b7a2997048654661d3a9d7f",
+                "parameters": [
+                    {
+                        "name": "transaction",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Dashboard carregado com sucesso"
+                        "description": "Transação atualizada com sucesso"
                     },
-                    "401": {
-                        "description": "Não autenticado"
+                    "404": {
+                        "description": "Transação não encontrada"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
                     }
                 },
                 "security": [
@@ -403,16 +906,28 @@
     },
     "tags": [
         {
+            "name": "Accounts",
+            "description": "Contas do usuário (corrente, poupança, dinheiro, investimento)"
+        },
+        {
             "name": "Auth",
             "description": "Autenticação de usuários"
         },
         {
-            "name": "Transactions",
-            "description": "Histórico de transações"
+            "name": "Categories",
+            "description": "Categorias e subcategorias de receitas/despesas"
         },
         {
-            "name": "Wallet",
-            "description": "Operações da carteira digital (conta principal do usuário)"
+            "name": "Dashboard",
+            "description": "Visão consolidada das finanças do usuário"
+        },
+        {
+            "name": "RecurringBills",
+            "description": "Contas fixas / recorrências (aluguel, assinaturas, etc.)"
+        },
+        {
+            "name": "Transactions",
+            "description": "Receitas, despesas e transferências"
         }
     ]
 }

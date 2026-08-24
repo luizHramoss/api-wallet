@@ -31,9 +31,16 @@ class Transaction extends Model
         self::STATUS_REALIZED,
     ];
 
+    public const TRANSFER_OUT = 'out';
+
+    public const TRANSFER_IN = 'in';
+
     protected $fillable = [
         'account_id',
         'category_id',
+        'recurring_bill_id',
+        'transfer_pair_id',
+        'transfer_direction',
         'type',
         'status',
         'amount',
@@ -55,6 +62,16 @@ class Transaction extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function recurringBill(): BelongsTo
+    {
+        return $this->belongsTo(RecurringBill::class);
+    }
+
+    public function transferPair(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class, 'transfer_pair_id');
     }
 
     public function isIncome(): bool

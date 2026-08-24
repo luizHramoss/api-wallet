@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class TransactionTest extends TestCase
@@ -15,6 +16,8 @@ class TransactionTest extends TestCase
     private User $userA;
 
     private User $userB;
+
+    private Account $accountA;
 
     private string $tokenA;
 
@@ -27,20 +30,131 @@ class TransactionTest extends TestCase
         $this->userA = User::factory()->create();
         $this->userB = User::factory()->create();
 
-        Account::factory()->checking()->withBalance(1000)->create(['user_id' => $this->userA->id]);
+        $this->accountA = Account::factory()->checking()->withBalance(1000)->create(['user_id' => $this->userA->id]);
         Account::factory()->checking()->withBalance(1000)->create(['user_id' => $this->userB->id]);
 
         $this->tokenA = $this->userA->createToken('test')->plainTextToken;
         $this->tokenB = $this->userB->createToken('test')->plainTextToken;
     }
 
+    private function income(float $amount = 100.00): TestResponse
+    {
+        return $this->withToken($this->tokenA)->postJson('/api/transactions', [
+            'account_id' => $this->accountA->id,
+            'type' => 'income',
+            'amount' => $amount,
+        ]);
+    }
+
+    private function expense(float $amount = 30.00): TestResponse
+    {
+        return $this->withToken($this->tokenA)->postJson('/api/transactions', [
+            'account_id' => $this->accountA->id,
+            'type' => 'expense',
+            'amount' => $amount,
+        ]);
+    }
+
+    // ─── Criação ───────────────────────────────────────────────────────────
+
+    public function test_user_can_create_income_transaction(): void
+    {
+        $this->income(200.50)
+            ->assertStatus(201)
+            ->assertJsonPath('data.type', 'income')
+            ->assertJsonPath('data.status', 'realized')
+            ->assertJsonPath('data.amount', 200.50);
+
+        $this->assertEquals('1200.50', $this->accountA->fresh()->balance);
+    }
+
+    public function test_user_can_create_expense_transaction(): void
+    {
+        $this->expense(150.00)
+            ->assertStatus(201)
+            ->assertJsonPath('data.type', 'expense');
+
+        $this->assertEquals('850.00', $this->accountA->fresh()->balance);
+    }
+
+    public function test_expense_fails_with_insufficient_balance(): void
+    {
+        $this->withToken($this->tokenA)->postJson('/api/transactions', [
+            'account_id' => $this->accountA->id, 'type' => 'expense', 'amount' => 5000.00,
+        ])->assertStatus(422);
+    }
+
+    public function test_user_cannot_create_transaction_on_another_users_account(): void
+    {
+        $foreignAccount = $this->userB->accounts()->first();
+
+        $this->withToken($this->tokenA)->postJson('/api/transactions', [
+            'account_id' => $foreignAccount->id, 'type' => 'income', 'amount' => 100.00,
+        ])->assertStatus(422);
+    }
+
+    public function test_transfer_between_own_accounts(): void
+    {
+        $secondAccount = Account::factory()->checking()->empty()->create(['user_id' => $this->userA->id]);
+
+        $this->withToken($this->tokenA)->postJson('/api/transactions', [
+            'account_id' => $this->accountA->id,
+            'to_account_id' => $secondAccount->id,
+            'type' => 'transfer',
+            'amount' => 300.00,
+        ])->assertStatus(201)->assertJsonPath('data.transfer_direction', 'out');
+
+        $this->assertEquals('700.00', $this->accountA->fresh()->balance);
+        $this->assertEquals('300.00', $secondAccount->fresh()->balance);
+    }
+
+    public function test_transfer_requires_to_account_id(): void
+    {
+        $this->withToken($this->tokenA)->postJson('/api/transactions', [
+            'account_id' => $this->accountA->id, 'type' => 'transfer', 'amount' => 100.00,
+        ])->assertStatus(422);
+    }
+
+    // ─── Atualização e exclusão ────────────────────────────────────────────
+
+    public function test_user_can_update_own_transaction(): void
+    {
+        $id = $this->income(100.00)->json('data.id');
+
+        $this->withToken($this->tokenA)
+            ->patchJson("/api/transactions/{$id}", ['description' => 'Atualizado'])
+            ->assertStatus(200)
+            ->assertJsonPath('data.description', 'Atualizado');
+    }
+
+    public function test_user_cannot_update_another_users_transaction(): void
+    {
+        $id = $this->income(100.00)->json('data.id');
+
+        auth()->forgetGuards();
+
+        $this->withToken($this->tokenB)
+            ->patchJson("/api/transactions/{$id}", ['description' => 'Hackeado'])
+            ->assertStatus(404);
+    }
+
+    public function test_user_can_delete_own_transaction_and_balance_reverts(): void
+    {
+        $id = $this->income(100.00)->json('data.id');
+
+        $this->withToken($this->tokenA)
+            ->deleteJson("/api/transactions/{$id}")
+            ->assertStatus(200);
+
+        $this->assertEquals('1000.00', $this->accountA->fresh()->balance);
+    }
+
     // ─── Listagem básica ───────────────────────────────────────────────────
 
     public function test_user_can_list_own_transactions(): void
     {
-        // Gerar transações para userA
-        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
-        $this->withToken($this->tokenA)->postJson('/api/wallet/withdraw', ['amount' => 50.00]);
+        $this->income(100.00);
+        $this->expense(50.00);
 
         $response = $this->withToken($this->tokenA)
             ->getJson('/api/transactions')
@@ -56,17 +170,18 @@ class TransactionTest extends TestCase
     // Cobre: usuário não acessa dados de outro usuário
     public function test_user_cannot_see_other_users_transactions(): void
     {
-        $this->actingAs($this->userB, 'sanctum')
-            ->postJson('/api/wallet/deposit', [
-                'amount' => 500.00,
-            ]);
+        $foreignAccount = $this->userB->accounts()->first();
+        $this->withToken($this->tokenB)->postJson('/api/transactions', [
+            'account_id' => $foreignAccount->id, 'type' => 'income', 'amount' => 500.00,
+        ]);
 
-        $this->actingAs($this->userB, 'sanctum')
-            ->postJson('/api/wallet/deposit', [
-                'amount' => 200.00,
-            ]);
+        // Sanctum's guard memoizes the resolved user for its lifetime in the
+        // container - switching the Bearer token alone isn't enough within
+        // the same test, or the previous request's user gets reused (see
+        // the same workaround in AuthTest::test_user_can_logout).
+        auth()->forgetGuards();
 
-        $response = $this->actingAs($this->userA, 'sanctum')
+        $response = $this->withToken($this->tokenA)
             ->getJson('/api/transactions')
             ->assertStatus(200);
 
@@ -82,8 +197,8 @@ class TransactionTest extends TestCase
 
     public function test_filter_by_type_income(): void
     {
-        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
-        $this->withToken($this->tokenA)->postJson('/api/wallet/withdraw', ['amount' => 30.00]);
+        $this->income(100.00);
+        $this->expense(30.00);
 
         $response = $this->withToken($this->tokenA)
             ->getJson('/api/transactions?type=income')
@@ -95,8 +210,8 @@ class TransactionTest extends TestCase
 
     public function test_filter_by_type_expense(): void
     {
-        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
-        $this->withToken($this->tokenA)->postJson('/api/wallet/withdraw', ['amount' => 30.00]);
+        $this->income(100.00);
+        $this->expense(30.00);
 
         $response = $this->withToken($this->tokenA)
             ->getJson('/api/transactions?type=expense')
@@ -115,10 +230,8 @@ class TransactionTest extends TestCase
 
     public function test_filter_by_status_realized(): void
     {
-        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
-
-        $account = $this->userA->accounts()->firstOrFail();
-        Transaction::factory()->planned()->create(['account_id' => $account->id]);
+        $this->income(100.00);
+        Transaction::factory()->planned()->create(['account_id' => $this->accountA->id]);
 
         $response = $this->withToken($this->tokenA)
             ->getJson('/api/transactions?status=realized')
@@ -128,9 +241,24 @@ class TransactionTest extends TestCase
         $this->assertEquals('realized', $response->json('data.0.status'));
     }
 
+    public function test_filter_by_account_id(): void
+    {
+        $secondAccount = Account::factory()->checking()->empty()->create(['user_id' => $this->userA->id]);
+        $this->income(100.00);
+        $this->withToken($this->tokenA)->postJson('/api/transactions', [
+            'account_id' => $secondAccount->id, 'type' => 'income', 'amount' => 50.00,
+        ]);
+
+        $response = $this->withToken($this->tokenA)
+            ->getJson("/api/transactions?account_id={$secondAccount->id}")
+            ->assertStatus(200);
+
+        $this->assertEquals(1, $response->json('meta.total'));
+    }
+
     public function test_filter_by_date_range(): void
     {
-        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
+        $this->income(100.00);
 
         $response = $this->withToken($this->tokenA)
             ->getJson('/api/transactions?date_from='.now()->toDateString().'&date_to='.now()->toDateString())
@@ -150,11 +278,7 @@ class TransactionTest extends TestCase
 
     public function test_pagination_per_page_is_respected(): void
     {
-        // Criar 20 transações
-        $account = $this->userA->accounts()->firstOrFail();
-        Transaction::factory(20)->credit()->create([
-            'account_id' => $account->id,
-        ]);
+        Transaction::factory(20)->credit()->create(['account_id' => $this->accountA->id]);
 
         $response = $this->withToken($this->tokenA)
             ->getJson('/api/transactions?per_page=5')
