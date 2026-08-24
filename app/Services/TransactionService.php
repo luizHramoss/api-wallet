@@ -40,6 +40,14 @@ class TransactionService
             $query->where('account_id', $filters['account_id']);
         }
 
+        // Checado com array_key_exists, não empty() - is_recurring=false é um
+        // valor válido e não deve ser tratado como "filtro ausente".
+        if (array_key_exists('is_recurring', $filters) && $filters['is_recurring'] !== null) {
+            filter_var($filters['is_recurring'], FILTER_VALIDATE_BOOLEAN)
+                ? $query->whereNotNull('recurring_bill_id')
+                : $query->whereNull('recurring_bill_id');
+        }
+
         if (! empty($filters['date_from'])) {
             $query->whereDate('occurred_at', '>=', Carbon::parse($filters['date_from']));
         }

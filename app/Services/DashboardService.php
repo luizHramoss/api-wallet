@@ -8,6 +8,8 @@ use Carbon\Carbon;
 
 class DashboardService
 {
+    public function __construct(private readonly InvestmentService $investmentService) {}
+
     /**
      * Retorna os dados do dashboard: saldo total, últimas transações, totais do mês.
      *
@@ -35,6 +37,16 @@ class DashboardService
             ->where('type', Transaction::TYPE_EXPENSE)
             ->sum('amount');
 
+        $fixedExpense = (clone $monthTransactions)
+            ->where('type', Transaction::TYPE_EXPENSE)
+            ->whereNotNull('recurring_bill_id')
+            ->sum('amount');
+
+        $variableExpense = (clone $monthTransactions)
+            ->where('type', Transaction::TYPE_EXPENSE)
+            ->whereNull('recurring_bill_id')
+            ->sum('amount');
+
         $lastTransactions = Transaction::query()
             ->whereHas('account', fn ($q) => $q->where('user_id', $user->id))
             ->orderByDesc('occurred_at')
@@ -48,11 +60,14 @@ class DashboardService
             'monthly_summary' => [
                 'total_income' => round((float) $totalIncome, 2),
                 'total_expense' => round((float) $totalExpense, 2),
+                'fixed_expense' => round((float) $fixedExpense, 2),
+                'variable_expense' => round((float) $variableExpense, 2),
                 'period' => [
                     'from' => $startOfMonth->toDateString(),
                     'to' => $endOfMonth->toDateString(),
                 ],
             ],
+            'investments' => $this->investmentService->portfolioSummary($user),
         ];
     }
 }

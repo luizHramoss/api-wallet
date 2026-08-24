@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Account;
+use App\Models\RecurringBill;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -239,6 +240,20 @@ class TransactionTest extends TestCase
 
         $this->assertEquals(1, $response->json('meta.total'));
         $this->assertEquals('realized', $response->json('data.0.status'));
+    }
+
+    public function test_filter_by_is_recurring(): void
+    {
+        $bill = RecurringBill::factory()->create(['user_id' => $this->userA->id, 'account_id' => $this->accountA->id]);
+        Transaction::factory()->planned()->create(['account_id' => $this->accountA->id, 'recurring_bill_id' => $bill->id]);
+        $this->income(100.00);
+
+        $recurring = $this->withToken($this->tokenA)->getJson('/api/transactions?is_recurring=true')->assertStatus(200);
+        $this->assertEquals(1, $recurring->json('meta.total'));
+
+        $notRecurring = $this->withToken($this->tokenA)->getJson('/api/transactions?is_recurring=false')->assertStatus(200);
+        $this->assertEquals(1, $notRecurring->json('meta.total'));
+        $this->assertEquals('income', $notRecurring->json('data.0.type'));
     }
 
     public function test_filter_by_account_id(): void

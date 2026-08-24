@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Investment;
 use App\Models\RecurringBill;
 use App\Models\Transaction;
 use App\Models\User;
@@ -16,6 +17,8 @@ class MetricsController extends Controller
         $accountsTotal = Account::count();
         $balanceTotal = (float) Account::sum('balance');
         $recurringBillsActiveTotal = RecurringBill::where('status', RecurringBill::STATUS_ACTIVE)->count();
+        $investmentsTotal = Investment::count();
+        $investmentsInvestedTotal = (float) Investment::selectRaw('SUM(quantity * average_price) as total')->value('total');
 
         $transactionsByType = Transaction::selectRaw('type, count(*) as total, sum(amount) as amount_total')
             ->groupBy('type')
@@ -35,6 +38,12 @@ class MetricsController extends Controller
             '# HELP wallet_recurring_bills_active_total Total number of active recurring bills.',
             '# TYPE wallet_recurring_bills_active_total gauge',
             "wallet_recurring_bills_active_total {$recurringBillsActiveTotal}",
+            '# HELP wallet_investments_total Total number of investment assets.',
+            '# TYPE wallet_investments_total gauge',
+            "wallet_investments_total {$investmentsTotal}",
+            '# HELP wallet_investments_invested_total Sum of invested value (quantity * average_price) across investments.',
+            '# TYPE wallet_investments_invested_total gauge',
+            "wallet_investments_invested_total {$investmentsInvestedTotal}",
             '# HELP wallet_transactions_total Total number of transactions, by type.',
             '# TYPE wallet_transactions_total counter',
         ];

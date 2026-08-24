@@ -44,6 +44,11 @@ class User extends Authenticatable
         return $this->hasMany(RecurringBill::class);
     }
 
+    public function investments(): HasMany
+    {
+        return $this->hasMany(Investment::class);
+    }
+
     /**
      * Transações do usuário, via as contas dele - Transaction não tem
      * user_id direto, só account_id. Permite `$user->transactions()->findOrFail($id)`
