@@ -34,6 +34,7 @@ class DashboardController extends Controller
                 'balance' => (float) $data['balance'],
                 'last_transactions' => TransactionResource::collection($data['last_transactions']),
                 'monthly_summary' => $data['monthly_summary'],
+                'investments' => $data['investments'],
             ],
         ]);
     }

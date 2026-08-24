@@ -25,6 +25,10 @@ class TransactionFilterRequest extends FormRequest
             ],
             'date_from' => ['nullable', 'date', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            // 'boolean' rejeita a string "true"/"false" (só aceita
+            // true/false/1/0/"1"/"0") - query strings sempre chegam como
+            // string, então aceitamos ambas as formas explicitamente.
+            'is_recurring' => ['nullable', Rule::in(['true', 'false', '1', '0'])],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
     }
@@ -35,6 +39,7 @@ class TransactionFilterRequest extends FormRequest
             'type.in' => 'O tipo deve ser income, expense ou transfer.',
             'status.in' => 'O status deve ser planned ou realized.',
             'category_id.exists' => 'Categoria não encontrada.',
+            'is_recurring.boolean' => 'O filtro is_recurring deve ser verdadeiro ou falso.',
             'date_from.date' => 'Data inicial inválida.',
             'date_from.date_format' => 'A data inicial deve estar no formato YYYY-MM-DD.',
             'date_to.date' => 'Data final inválida.',

@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Account;
+use App\Models\RecurringBill;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -38,10 +40,34 @@ class DashboardControllerTest extends TestCase
                     'monthly_summary' => [
                         'total_income',
                         'total_expense',
+                        'fixed_expense',
+                        'variable_expense',
                         'period' => ['from', 'to'],
+                    ],
+                    'investments' => [
+                        'total_invested', 'total_current_value', 'rentability_percent',
+                        'invested_this_month', 'dividends_this_month', 'period' => ['from', 'to'],
                     ],
                 ],
             ]);
+    }
+
+    public function test_dashboard_splits_fixed_vs_variable_expenses(): void
+    {
+        $bill = RecurringBill::factory()->create(['user_id' => $this->user->id, 'account_id' => $this->account->id]);
+        Transaction::factory()->create([
+            'account_id' => $this->account->id, 'type' => 'expense', 'status' => 'realized',
+            'recurring_bill_id' => null, 'amount' => 50.00, 'occurred_at' => now(),
+        ]);
+        Transaction::factory()->create([
+            'account_id' => $this->account->id, 'type' => 'expense', 'status' => 'realized',
+            'recurring_bill_id' => $bill->id, 'amount' => 120.00, 'occurred_at' => now(),
+        ]);
+
+        $response = $this->withToken($this->token)->getJson('/api/dashboard')->assertStatus(200);
+
+        $this->assertEquals(120.00, $response->json('data.monthly_summary.fixed_expense'));
+        $this->assertEquals(50.00, $response->json('data.monthly_summary.variable_expense'));
     }
 
     public function test_unauthenticated_user_cannot_view_dashboard(): void

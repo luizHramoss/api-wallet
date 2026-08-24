@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\MetricsController;
 use App\Http\Controllers\RecurringBillController;
 use App\Http\Controllers\TransactionController;
@@ -48,4 +49,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/recurring-bills', [RecurringBillController::class, 'store']);
     Route::patch('/recurring-bills/{recurring_bill}', [RecurringBillController::class, 'update']);
     Route::delete('/recurring-bills/{recurring_bill}', [RecurringBillController::class, 'destroy']);
+
+    Route::get('/investments/summary', [InvestmentController::class, 'summary']);
+    Route::get('/investments', [InvestmentController::class, 'index']);
+    Route::post('/investments', [InvestmentController::class, 'store']);
+    Route::patch('/investments/{investment}', [InvestmentController::class, 'update']);
+    Route::delete('/investments/{investment}', [InvestmentController::class, 'destroy']);
+    Route::get('/investments/{investment}/movements', [InvestmentController::class, 'movements']);
+    Route::post('/investments/{investment}/movements', [InvestmentController::class, 'storeMovement']);
 });

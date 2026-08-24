@@ -67,6 +67,13 @@ class Handler extends ExceptionHandler
             ], 422);
         }
 
+        if ($e instanceof InsufficientQuantityException) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
         if ($e instanceof HttpException) {
             return response()->json([
                 'success' => false,

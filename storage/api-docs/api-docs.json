@@ -457,6 +457,275 @@
                 ]
             }
         },
+        "/api/investments": {
+            "get": {
+                "tags": [
+                    "Investments"
+                ],
+                "summary": "Listar ativos da carteira",
+                "operationId": "0219250acdc66727d7781c2bbe38dd17",
+                "responses": {
+                    "200": {
+                        "description": "Ativos listados com sucesso"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Investments"
+                ],
+                "summary": "Criar ativo",
+                "description": "Cria só o ativo (posição zerada) - registre a primeira compra via POST /api/investments/{investment}/movements.",
+                "operationId": "650ba82fccad5f7634cd8f4e7580abbc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "account_id",
+                                    "name",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "account_id": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Petrobras PN"
+                                    },
+                                    "symbol": {
+                                        "type": "string",
+                                        "example": "PETR4",
+                                        "nullable": true
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "stock",
+                                            "fixed_income",
+                                            "fund",
+                                            "crypto",
+                                            "other"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Ativo criado com sucesso"
+                    },
+                    "422": {
+                        "description": "Dados inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/investments/summary": {
+            "get": {
+                "tags": [
+                    "Investments"
+                ],
+                "summary": "Resumo da carteira (total investido, valor atual, rentabilidade, investido no mês)",
+                "operationId": "0b4ba120ab4a4431c4a6802c944ab5b1",
+                "responses": {
+                    "200": {
+                        "description": "Resumo carregado com sucesso"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/investments/{investment}": {
+            "delete": {
+                "tags": [
+                    "Investments"
+                ],
+                "summary": "Excluir ativo",
+                "description": "Exclui o ativo e todo o histórico de movimentos dele (não reverte o saldo da conta já movimentado).",
+                "operationId": "0a4739ecd1c8f3534ab210f341739a5d",
+                "parameters": [
+                    {
+                        "name": "investment",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ativo excluído com sucesso"
+                    },
+                    "404": {
+                        "description": "Ativo não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Investments"
+                ],
+                "summary": "Atualizar ativo (metadados e/ou cotação manual)",
+                "operationId": "ad3efa568a2c9c83abfa9f9a070eae10",
+                "parameters": [
+                    {
+                        "name": "investment",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ativo atualizado com sucesso"
+                    },
+                    "404": {
+                        "description": "Ativo não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/investments/{investment}/movements": {
+            "get": {
+                "tags": [
+                    "Investments"
+                ],
+                "summary": "Listar movimentos (compras/vendas/dividendos) de um ativo",
+                "operationId": "b6d36b708cc16e668f42503c28dfbe56",
+                "parameters": [
+                    {
+                        "name": "investment",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Movimentos listados com sucesso"
+                    },
+                    "404": {
+                        "description": "Ativo não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Investments"
+                ],
+                "summary": "Registrar compra, venda ou dividendo",
+                "description": "Compra debita a conta vinculada; venda e dividendo creditam. Compra/venda recalculam quantidade e preço médio.",
+                "operationId": "46dd13ef487e26f4fd7a502d09275a99",
+                "parameters": [
+                    {
+                        "name": "investment",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "buy",
+                                            "sell",
+                                            "dividend"
+                                        ]
+                                    },
+                                    "quantity": {
+                                        "description": "Obrigatório em buy/sell",
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "price": {
+                                        "description": "Obrigatório em buy/sell",
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "amount": {
+                                        "description": "Obrigatório em dividend",
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "occurred_at": {
+                                        "type": "string",
+                                        "format": "date"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Movimento registrado com sucesso"
+                    },
+                    "404": {
+                        "description": "Ativo não encontrado"
+                    },
+                    "422": {
+                        "description": "Dados inválidos ou quantidade/saldo insuficiente"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/recurring-bills": {
             "get": {
                 "tags": [
@@ -693,6 +962,15 @@
                         }
                     },
                     {
+                        "name": "is_recurring",
+                        "in": "query",
+                        "description": "Filtra por transações geradas de uma conta fixa (true) ou avulsas (false).",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "required": false,
@@ -920,6 +1198,10 @@
         {
             "name": "Dashboard",
             "description": "Visão consolidada das finanças do usuário"
+        },
+        {
+            "name": "Investments",
+            "description": "Carteira de investimentos - ativos e movimentos (compra/venda/dividendo)"
         },
         {
             "name": "RecurringBills",

@@ -59,6 +59,13 @@ class TransactionController extends Controller
                 schema: new OA\Schema(type: 'string', format: 'date', example: '2024-01-31'),
             ),
             new OA\Parameter(
+                name: 'is_recurring',
+                in: 'query',
+                required: false,
+                description: 'Filtra por transações geradas de uma conta fixa (true) ou avulsas (false).',
+                schema: new OA\Schema(type: 'boolean'),
+            ),
+            new OA\Parameter(
                 name: 'per_page',
                 in: 'query',
                 required: false,
