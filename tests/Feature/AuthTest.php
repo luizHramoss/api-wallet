@@ -109,7 +109,7 @@ class AuthTest extends TestCase
 
         auth()->forgetGuards();
 
-        $this->getJson('/api/wallet', [
+        $this->getJson('/api/accounts', [
             'Authorization' => 'Bearer '.$token,
         ])->assertUnauthorized();
     }

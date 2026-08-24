@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\InsufficientBalanceException;
 use App\Models\Account;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class AccountService
@@ -32,6 +33,39 @@ class AccountService
     }
 
     /**
+     * Lista todas as contas do usuário (inclusive arquivadas - quem decide
+     * o que exibir é o consumidor), ordenadas pelas mais antigas primeiro.
+     */
+    public function listFor(User $user): Collection
+    {
+        return $user->accounts()->oldest('id')->get();
+    }
+
+    public function update(Account $account, array $data): Account
+    {
+        $account->fill(array_intersect_key($data, array_flip(['name', 'type', 'color'])));
+        $account->save();
+
+        return $account;
+    }
+
+    public function archive(Account $account): Account
+    {
+        $account->is_archived = true;
+        $account->save();
+
+        return $account;
+    }
+
+    public function unarchive(Account $account): Account
+    {
+        $account->is_archived = false;
+        $account->save();
+
+        return $account;
+    }
+
+    /**
      * Busca e trava (lockForUpdate) uma conta do usuário para mutação segura de saldo.
      *
      * @throws ModelNotFoundException
@@ -44,33 +78,15 @@ class AccountService
     }
 
     /**
-     * Retorna (sem travar) a conta padrão do usuário - a primeira não arquivada.
-     * Usada em leituras (GET) enquanto o usuário só tem uma conta e não precisa
-     * escolher explicitamente.
+     * Trava (lockForUpdate) uma conta por id sem escopar por usuário - usado
+     * quando a posse já foi verificada antes (ex: TransactionService, a
+     * partir de um Transaction já resolvido via $user->transactions()).
      *
      * @throws ModelNotFoundException
      */
-    public function firstAccountFor(User $user): Account
+    public function lockById(int $accountId): Account
     {
-        return Account::where('user_id', $user->id)
-            ->where('is_archived', false)
-            ->oldest('id')
-            ->firstOrFail();
-    }
-
-    /**
-     * Mesma resolução que firstAccountFor(), mas travando a linha (lockForUpdate)
-     * para uso dentro de uma DB::transaction() que vai mutar o saldo.
-     *
-     * @throws ModelNotFoundException
-     */
-    public function lockDefaultAccountFor(User $user): Account
-    {
-        return Account::lockForUpdate()
-            ->where('user_id', $user->id)
-            ->where('is_archived', false)
-            ->oldest('id')
-            ->firstOrFail();
+        return Account::lockForUpdate()->findOrFail($accountId);
     }
 
     public function credit(Account $account, float $amount): void

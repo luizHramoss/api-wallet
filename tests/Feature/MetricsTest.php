@@ -32,6 +32,7 @@ class MetricsTest extends TestCase
         $this->assertStringContainsString('wallet_users_total 1', $body);
         $this->assertStringContainsString('wallet_accounts_total 1', $body);
         $this->assertStringContainsString('wallet_balance_total 100', $body);
+        $this->assertStringContainsString('wallet_recurring_bills_active_total 0', $body);
         $this->assertStringContainsString('wallet_transactions_total{type="income"} 1', $body);
         $this->assertStringContainsString('wallet_transactions_total{type="expense"} 0', $body);
         $this->assertStringContainsString('wallet_transactions_total{type="transfer"} 0', $body);

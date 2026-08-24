@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Account;
 use App\Models\Category;
+use App\Models\RecurringBill;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -26,7 +27,9 @@ class UserSeeder extends Seeder
             ['type' => Account::TYPE_CHECKING, 'balance' => 1500.00]
         );
 
-        $this->seedTransactions($adminAccount, $this->defaultCategories($admin));
+        $adminCategories = $this->defaultCategories($admin);
+        $this->seedTransactions($adminAccount, $adminCategories);
+        $this->seedRecurringBills($admin, $adminAccount, $adminCategories);
 
         // ─── Usuário comum de teste ──────────────────────────────────────────
         $user = User::firstOrCreate(
@@ -101,6 +104,33 @@ class UserSeeder extends Seeder
                 'created_at' => now()->subDays($tx['days_ago']),
                 'updated_at' => now()->subDays($tx['days_ago']),
             ]);
+        }
+    }
+
+    /**
+     * @param  array{income: Category, expense: Category}  $categories
+     */
+    private function seedRecurringBills(User $user, Account $account, array $categories): void
+    {
+        $bills = [
+            ['name' => 'Aluguel', 'amount' => 1200.00, 'day_of_month' => 5],
+            ['name' => 'Internet', 'amount' => 99.90, 'day_of_month' => 10],
+            ['name' => 'Academia', 'amount' => 89.90, 'day_of_month' => 15],
+        ];
+
+        foreach ($bills as $bill) {
+            RecurringBill::firstOrCreate(
+                ['user_id' => $user->id, 'name' => $bill['name']],
+                [
+                    'account_id' => $account->id,
+                    'category_id' => $categories['expense']->id,
+                    'type' => Transaction::TYPE_EXPENSE,
+                    'amount' => $bill['amount'],
+                    'day_of_month' => $bill['day_of_month'],
+                    'start_date' => now()->subMonths(3)->startOfMonth()->toDateString(),
+                    'status' => RecurringBill::STATUS_ACTIVE,
+                ]
+            );
         }
     }
 }
