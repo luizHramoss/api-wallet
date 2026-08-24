@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Account;
 use App\Models\User;
-use App\Models\Wallet;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,8 +20,13 @@ class WalletTest extends TestCase
         parent::setUp();
 
         $this->user = User::factory()->create();
-        Wallet::factory()->empty()->create(['user_id' => $this->user->id]);
+        Account::factory()->checking()->empty()->create(['user_id' => $this->user->id]);
         $this->token = $this->user->createToken('test')->plainTextToken;
+    }
+
+    private function defaultAccount(): Account
+    {
+        return $this->user->accounts()->oldest('id')->firstOrFail()->fresh();
     }
 
     // ─── Saldo ─────────────────────────────────────────────────────────────
@@ -31,7 +36,7 @@ class WalletTest extends TestCase
         $this->withToken($this->token)
             ->getJson('/api/wallet')
             ->assertStatus(200)
-            ->assertJsonStructure(['data' => ['id', 'balance', 'updated_at']])
+            ->assertJsonStructure(['data' => ['id', 'name', 'type', 'balance', 'updated_at']])
             ->assertJsonPath('data.balance', 0);
     }
 
@@ -49,11 +54,11 @@ class WalletTest extends TestCase
             ->postJson('/api/wallet/deposit', ['amount' => 200.50])
             ->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.type', 'credit')
-            ->assertJsonPath('data.amount', 200.50)
-            ->assertJsonPath('data.balance_after', 200.50);
+            ->assertJsonPath('data.type', 'income')
+            ->assertJsonPath('data.status', 'realized')
+            ->assertJsonPath('data.amount', 200.50);
 
-        $this->assertDatabaseHas('wallets', [
+        $this->assertDatabaseHas('accounts', [
             'user_id' => $this->user->id,
             'balance' => 200.50,
         ]);
@@ -64,8 +69,7 @@ class WalletTest extends TestCase
         $this->withToken($this->token)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
         $this->withToken($this->token)->postJson('/api/wallet/deposit', ['amount' => 50.25]);
 
-        $wallet = $this->user->wallet->fresh();
-        $this->assertEquals('150.25', $wallet->balance);
+        $this->assertEquals('150.25', $this->defaultAccount()->balance);
     }
 
     public function test_deposit_fails_with_zero_amount(): void
@@ -95,8 +99,9 @@ class WalletTest extends TestCase
             ->postJson('/api/wallet/deposit', ['amount' => 300.00]);
 
         $this->assertDatabaseHas('transactions', [
-            'wallet_id' => $this->user->wallet->id,
-            'type' => 'credit',
+            'account_id' => $this->defaultAccount()->id,
+            'type' => 'income',
+            'status' => 'realized',
             'amount' => 300.00,
         ]);
     }
@@ -113,11 +118,10 @@ class WalletTest extends TestCase
         $this->withToken($this->token)
             ->postJson('/api/wallet/withdraw', ['amount' => 150.00])
             ->assertStatus(200)
-            ->assertJsonPath('data.type', 'debit')
-            ->assertJsonPath('data.amount', 150)
-            ->assertJsonPath('data.balance_after', 350);
+            ->assertJsonPath('data.type', 'expense')
+            ->assertJsonPath('data.amount', 150);
 
-        $this->assertDatabaseHas('wallets', [
+        $this->assertDatabaseHas('accounts', [
             'user_id' => $this->user->id,
             'balance' => 350.00,
         ]);
@@ -126,14 +130,14 @@ class WalletTest extends TestCase
     // Cobre: saque com saldo insuficiente
     public function test_withdraw_fails_when_balance_is_insufficient(): void
     {
-        // Carteira começa vazia (saldo = 0)
+        // Conta começa vazia (saldo = 0)
         $this->withToken($this->token)
             ->postJson('/api/wallet/withdraw', ['amount' => 100.00])
             ->assertStatus(422)
             ->assertJsonPath('success', false);
 
         // Saldo não deve ter sido alterado
-        $this->assertEquals('0.00', $this->user->wallet->fresh()->balance);
+        $this->assertEquals('0.00', $this->defaultAccount()->balance);
     }
 
     public function test_withdraw_fails_when_amount_exceeds_balance(): void
@@ -154,7 +158,7 @@ class WalletTest extends TestCase
             ->postJson('/api/wallet/withdraw', ['amount' => 0.01])
             ->assertStatus(200);
 
-        $this->assertEquals('0.99', $this->user->wallet->fresh()->balance);
+        $this->assertEquals('0.99', $this->defaultAccount()->balance);
     }
 
     public function test_withdraw_below_minimum_fails(): void
@@ -170,8 +174,8 @@ class WalletTest extends TestCase
         $this->withToken($this->token)->postJson('/api/wallet/withdraw', ['amount' => 75.00]);
 
         $this->assertDatabaseHas('transactions', [
-            'wallet_id' => $this->user->wallet->id,
-            'type' => 'debit',
+            'account_id' => $this->defaultAccount()->id,
+            'type' => 'expense',
             'amount' => 75.00,
         ]);
     }
@@ -188,8 +192,8 @@ class WalletTest extends TestCase
                     'balance',
                     'last_transactions',
                     'monthly_summary' => [
-                        'total_deposited',
-                        'total_withdrawn',
+                        'total_income',
+                        'total_expense',
                         'period' => ['from', 'to'],
                     ],
                 ],
@@ -206,8 +210,8 @@ class WalletTest extends TestCase
             ->getJson('/api/wallet/dashboard')
             ->assertStatus(200);
 
-        $this->assertEquals(800.00, $response->json('data.monthly_summary.total_deposited'));
-        $this->assertEquals(200.00, $response->json('data.monthly_summary.total_withdrawn'));
+        $this->assertEquals(800.00, $response->json('data.monthly_summary.total_income'));
+        $this->assertEquals(200.00, $response->json('data.monthly_summary.total_expense'));
         $this->assertEquals(600.00, $response->json('data.balance'));
     }
 

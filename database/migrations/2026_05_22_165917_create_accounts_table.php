@@ -8,18 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('wallets', function (Blueprint $table) {
+        Schema::create('accounts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('name');
+            $table->enum('type', ['checking', 'savings', 'cash', 'investment']);
             $table->decimal('balance', 15, 2)->default(0.00);
+            $table->string('color')->nullable();
+            $table->boolean('is_archived')->default(false);
             $table->timestamps();
 
-            $table->unique('user_id');
+            $table->index(['user_id', 'is_archived']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('wallets');
+        Schema::dropIfExists('accounts');
     }
 };

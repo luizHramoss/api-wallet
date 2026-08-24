@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Models\Wallet;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -27,8 +27,8 @@ class TransactionTest extends TestCase
         $this->userA = User::factory()->create();
         $this->userB = User::factory()->create();
 
-        Wallet::factory()->withBalance(1000)->create(['user_id' => $this->userA->id]);
-        Wallet::factory()->withBalance(1000)->create(['user_id' => $this->userB->id]);
+        Account::factory()->checking()->withBalance(1000)->create(['user_id' => $this->userA->id]);
+        Account::factory()->checking()->withBalance(1000)->create(['user_id' => $this->userB->id]);
 
         $this->tokenA = $this->userA->createToken('test')->plainTextToken;
         $this->tokenB = $this->userB->createToken('test')->plainTextToken;
@@ -46,7 +46,7 @@ class TransactionTest extends TestCase
             ->getJson('/api/transactions')
             ->assertStatus(200)
             ->assertJsonStructure([
-                'data' => [['id', 'type', 'amount', 'balance_after', 'created_at']],
+                'data' => [['id', 'account_id', 'type', 'status', 'amount', 'occurred_at', 'created_at']],
                 'meta' => ['current_page', 'last_page', 'per_page', 'total'],
             ]);
 
@@ -80,30 +80,30 @@ class TransactionTest extends TestCase
 
     // ─── Filtros ───────────────────────────────────────────────────────────
 
-    public function test_filter_by_type_credit(): void
+    public function test_filter_by_type_income(): void
     {
         $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
         $this->withToken($this->tokenA)->postJson('/api/wallet/withdraw', ['amount' => 30.00]);
 
         $response = $this->withToken($this->tokenA)
-            ->getJson('/api/transactions?type=credit')
+            ->getJson('/api/transactions?type=income')
             ->assertStatus(200);
 
         $this->assertEquals(1, $response->json('meta.total'));
-        $this->assertEquals('credit', $response->json('data.0.type'));
+        $this->assertEquals('income', $response->json('data.0.type'));
     }
 
-    public function test_filter_by_type_debit(): void
+    public function test_filter_by_type_expense(): void
     {
         $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
         $this->withToken($this->tokenA)->postJson('/api/wallet/withdraw', ['amount' => 30.00]);
 
         $response = $this->withToken($this->tokenA)
-            ->getJson('/api/transactions?type=debit')
+            ->getJson('/api/transactions?type=expense')
             ->assertStatus(200);
 
         $this->assertEquals(1, $response->json('meta.total'));
-        $this->assertEquals('debit', $response->json('data.0.type'));
+        $this->assertEquals('expense', $response->json('data.0.type'));
     }
 
     public function test_filter_by_invalid_type_returns_422(): void
@@ -111,6 +111,21 @@ class TransactionTest extends TestCase
         $this->withToken($this->tokenA)
             ->getJson('/api/transactions?type=invalid')
             ->assertStatus(422);
+    }
+
+    public function test_filter_by_status_realized(): void
+    {
+        $this->withToken($this->tokenA)->postJson('/api/wallet/deposit', ['amount' => 100.00]);
+
+        $account = $this->userA->accounts()->firstOrFail();
+        Transaction::factory()->planned()->create(['account_id' => $account->id]);
+
+        $response = $this->withToken($this->tokenA)
+            ->getJson('/api/transactions?status=realized')
+            ->assertStatus(200);
+
+        $this->assertEquals(1, $response->json('meta.total'));
+        $this->assertEquals('realized', $response->json('data.0.status'));
     }
 
     public function test_filter_by_date_range(): void
@@ -136,10 +151,9 @@ class TransactionTest extends TestCase
     public function test_pagination_per_page_is_respected(): void
     {
         // Criar 20 transações
-        $wallet = $this->userA->wallet;
+        $account = $this->userA->accounts()->firstOrFail();
         Transaction::factory(20)->credit()->create([
-            'wallet_id' => $wallet->id,
-            'balance_after' => 100,
+            'account_id' => $account->id,
         ]);
 
         $response = $this->withToken($this->tokenA)

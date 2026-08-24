@@ -30,10 +30,10 @@ class AuthTest extends TestCase
             ->assertJsonPath('success', true);
 
         $this->assertDatabaseHas('users', ['email' => 'joao@email.com']);
-        $this->assertDatabaseHas('wallets', []);
+        $this->assertDatabaseHas('accounts', []);
     }
 
-    public function test_wallet_is_created_with_zero_balance_on_register(): void
+    public function test_default_account_is_created_with_zero_balance_on_register(): void
     {
         $this->postJson('/api/auth/register', [
             'name' => 'Maria',
@@ -43,8 +43,8 @@ class AuthTest extends TestCase
         ]);
 
         $user = User::where('email', 'maria@email.com')->first();
-        $this->assertNotNull($user->wallet);
-        $this->assertEquals('0.00', $user->wallet->balance);
+        $this->assertCount(1, $user->accounts);
+        $this->assertEquals('0.00', $user->accounts->first()->balance);
     }
 
     public function test_register_fails_with_duplicate_email(): void

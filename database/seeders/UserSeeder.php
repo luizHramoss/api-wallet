@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Account;
+use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Models\Wallet;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
@@ -20,13 +21,12 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $adminWallet = Wallet::firstOrCreate(
-            ['user_id' => $admin->id],
-            ['balance' => 1500.00]
+        $adminAccount = Account::firstOrCreate(
+            ['user_id' => $admin->id, 'name' => 'Conta Principal'],
+            ['type' => Account::TYPE_CHECKING, 'balance' => 1500.00]
         );
 
-        // Seed de transações para o admin
-        $this->seedTransactions($adminWallet);
+        $this->seedTransactions($adminAccount, $this->defaultCategories($admin));
 
         // ─── Usuário comum de teste ──────────────────────────────────────────
         $user = User::firstOrCreate(
@@ -37,19 +37,19 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $userWallet = Wallet::firstOrCreate(
-            ['user_id' => $user->id],
-            ['balance' => 250.75]
+        $userAccount = Account::firstOrCreate(
+            ['user_id' => $user->id, 'name' => 'Conta Principal'],
+            ['type' => Account::TYPE_CHECKING, 'balance' => 250.75]
         );
 
-        $this->seedTransactions($userWallet);
+        $this->seedTransactions($userAccount, $this->defaultCategories($user));
 
         // ─── Usuários aleatórios ─────────────────────────────────────────────
         User::factory(5)->create()->each(function (User $u) {
-            $wallet = Wallet::factory()->withBalance(fake()->randomFloat(2, 100, 3000))->create([
+            $account = Account::factory()->checking()->withBalance(fake()->randomFloat(2, 100, 3000))->create([
                 'user_id' => $u->id,
             ]);
-            $this->seedTransactions($wallet);
+            $this->seedTransactions($account, $this->defaultCategories($u));
         });
 
         $this->command->info('✅  Seed concluído. Credenciais demo:');
@@ -57,36 +57,47 @@ class UserSeeder extends Seeder
         $this->command->line('   user@wallet.com  / password');
     }
 
-    private function seedTransactions(Wallet $wallet): void
+    /**
+     * @return array{income: Category, expense: Category}
+     */
+    private function defaultCategories(User $user): array
+    {
+        return [
+            'income' => Category::firstOrCreate(
+                ['user_id' => $user->id, 'name' => 'Salário', 'type' => Category::TYPE_INCOME]
+            ),
+            'expense' => Category::firstOrCreate(
+                ['user_id' => $user->id, 'name' => 'Geral', 'type' => Category::TYPE_EXPENSE]
+            ),
+        ];
+    }
+
+    /**
+     * @param  array{income: Category, expense: Category}  $categories
+     */
+    private function seedTransactions(Account $account, array $categories): void
     {
         $transactions = [
-            ['type' => 'credit', 'amount' => 500.00,  'days_ago' => 30],
-            ['type' => 'credit', 'amount' => 200.50,  'days_ago' => 25],
-            ['type' => 'debit',  'amount' => 75.25,   'days_ago' => 20],
-            ['type' => 'credit', 'amount' => 1000.00, 'days_ago' => 15],
-            ['type' => 'debit',  'amount' => 300.00,  'days_ago' => 10],
-            ['type' => 'credit', 'amount' => 150.00,  'days_ago' => 5],
-            ['type' => 'debit',  'amount' => 50.00,   'days_ago' => 2],
+            ['type' => Transaction::TYPE_INCOME, 'amount' => 500.00, 'days_ago' => 30],
+            ['type' => Transaction::TYPE_INCOME, 'amount' => 200.50, 'days_ago' => 25],
+            ['type' => Transaction::TYPE_EXPENSE, 'amount' => 75.25, 'days_ago' => 20],
+            ['type' => Transaction::TYPE_INCOME, 'amount' => 1000.00, 'days_ago' => 15],
+            ['type' => Transaction::TYPE_EXPENSE, 'amount' => 300.00, 'days_ago' => 10],
+            ['type' => Transaction::TYPE_INCOME, 'amount' => 150.00, 'days_ago' => 5],
+            ['type' => Transaction::TYPE_EXPENSE, 'amount' => 50.00, 'days_ago' => 2],
         ];
 
-        $runningBalance = 0.00;
-
         foreach ($transactions as $tx) {
-            if ($tx['type'] === 'credit') {
-                $runningBalance = round($runningBalance + $tx['amount'], 2);
-            } else {
-                $runningBalance = round($runningBalance - $tx['amount'], 2);
-                if ($runningBalance < 0) {
-                    $runningBalance = 0.00;
-                }
-            }
-
             Transaction::create([
-                'wallet_id' => $wallet->id,
+                'account_id' => $account->id,
+                'category_id' => $tx['type'] === Transaction::TYPE_INCOME
+                    ? $categories['income']->id
+                    : $categories['expense']->id,
                 'type' => $tx['type'],
+                'status' => Transaction::STATUS_REALIZED,
                 'amount' => $tx['amount'],
-                'balance_after' => $runningBalance,
-                'description' => $tx['type'] === 'credit' ? 'Depósito' : 'Saque',
+                'description' => $tx['type'] === Transaction::TYPE_INCOME ? 'Depósito' : 'Saque',
+                'occurred_at' => now()->subDays($tx['days_ago'])->toDateString(),
                 'created_at' => now()->subDays($tx['days_ago']),
                 'updated_at' => now()->subDays($tx['days_ago']),
             ]);

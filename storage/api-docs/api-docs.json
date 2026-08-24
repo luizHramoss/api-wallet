@@ -152,9 +152,30 @@
                         "schema": {
                             "type": "string",
                             "enum": [
-                                "credit",
-                                "debit"
+                                "income",
+                                "expense",
+                                "transfer"
                             ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "planned",
+                                "realized"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
                         }
                     },
                     {
@@ -391,7 +412,7 @@
         },
         {
             "name": "Wallet",
-            "description": "Operações da carteira digital"
+            "description": "Operações da carteira digital (conta principal do usuário)"
         }
     ]
 }

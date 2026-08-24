@@ -6,7 +6,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Services\WalletService;
+use App\Services\AccountService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +15,7 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Auth', description: 'Autenticação de usuários')]
 class AuthController extends Controller
 {
-    public function __construct(private readonly WalletService $walletService) {}
+    public function __construct(private readonly AccountService $accountService) {}
 
     #[OA\Post(
         path: '/api/auth/register',
@@ -42,7 +42,7 @@ class AuthController extends Controller
     {
         $user = User::create($request->validated());
 
-        $this->walletService->createForUser($user);
+        $this->accountService->createDefaultForUser($user);
 
         $token = $user->createToken('api-token')->plainTextToken;
 

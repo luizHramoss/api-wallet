@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\TransactionFilterRequest;
 use App\Http\Resources\TransactionResource;
-use App\Services\WalletService;
+use App\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Transactions', description: 'Histórico de transações')]
 class TransactionController extends Controller
 {
-    public function __construct(private readonly WalletService $walletService) {}
+    public function __construct(private readonly TransactionService $transactionService) {}
 
     #[OA\Get(
         path: '/api/transactions',
@@ -23,7 +23,19 @@ class TransactionController extends Controller
                 name: 'type',
                 in: 'query',
                 required: false,
-                schema: new OA\Schema(type: 'string', enum: ['credit', 'debit']),
+                schema: new OA\Schema(type: 'string', enum: ['income', 'expense', 'transfer']),
+            ),
+            new OA\Parameter(
+                name: 'status',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'string', enum: ['planned', 'realized']),
+            ),
+            new OA\Parameter(
+                name: 'category_id',
+                in: 'query',
+                required: false,
+                schema: new OA\Schema(type: 'integer'),
             ),
             new OA\Parameter(
                 name: 'date_from',
@@ -51,7 +63,7 @@ class TransactionController extends Controller
     )]
     public function index(TransactionFilterRequest $request): JsonResponse
     {
-        $paginator = $this->walletService->getTransactions(
+        $paginator = $this->transactionService->getTransactions(
             $request->user(),
             $request->validated()
         );

@@ -10,15 +10,18 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('wallet_id')->constrained()->cascadeOnDelete();
-            $table->enum('type', ['credit', 'debit']);
+            $table->foreignId('account_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->enum('type', ['income', 'expense', 'transfer']);
+            $table->enum('status', ['planned', 'realized'])->default('realized');
             $table->decimal('amount', 15, 2);
-            $table->decimal('balance_after', 15, 2);
             $table->string('description')->nullable();
+            $table->date('occurred_at');
             $table->timestamps();
 
-            $table->index(['wallet_id', 'type']);
-            $table->index(['wallet_id', 'created_at']);
+            $table->index(['account_id', 'type']);
+            $table->index(['account_id', 'occurred_at']);
+            $table->index(['account_id', 'status']);
         });
     }
 

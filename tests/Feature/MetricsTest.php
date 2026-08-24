@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Models\Wallet;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,8 +20,8 @@ class MetricsTest extends TestCase
     public function test_metrics_endpoint_returns_prometheus_text_format(): void
     {
         $user = User::factory()->create();
-        $wallet = Wallet::factory()->withBalance(100)->create(['user_id' => $user->id]);
-        Transaction::factory()->credit()->create(['wallet_id' => $wallet->id, 'amount' => 100, 'balance_after' => 100]);
+        $account = Account::factory()->checking()->withBalance(100)->create(['user_id' => $user->id]);
+        Transaction::factory()->credit()->create(['account_id' => $account->id, 'amount' => 100]);
 
         $response = $this->get('/api/metrics');
 
@@ -30,9 +30,10 @@ class MetricsTest extends TestCase
 
         $body = $response->getContent();
         $this->assertStringContainsString('wallet_users_total 1', $body);
-        $this->assertStringContainsString('wallet_wallets_total 1', $body);
+        $this->assertStringContainsString('wallet_accounts_total 1', $body);
         $this->assertStringContainsString('wallet_balance_total 100', $body);
-        $this->assertStringContainsString('wallet_transactions_total{type="credit"} 1', $body);
-        $this->assertStringContainsString('wallet_transactions_total{type="debit"} 0', $body);
+        $this->assertStringContainsString('wallet_transactions_total{type="income"} 1', $body);
+        $this->assertStringContainsString('wallet_transactions_total{type="expense"} 0', $body);
+        $this->assertStringContainsString('wallet_transactions_total{type="transfer"} 0', $body);
     }
 }
