@@ -3,35 +3,37 @@
 namespace Tests\Feature;
 
 use App\Exceptions\InsufficientBalanceException;
+use App\Models\Account;
 use App\Models\User;
-use App\Models\Wallet;
-use App\Services\WalletService;
+use App\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
-class WalletServiceTest extends TestCase
+class TransactionServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private WalletService $service;
+    private TransactionService $service;
 
     private User $user;
+
+    private Account $account;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->service = app(WalletService::class);
+        $this->service = app(TransactionService::class);
         $this->user = User::factory()->create();
 
-        Wallet::factory()->empty()->create(['user_id' => $this->user->id]);
+        $this->account = Account::factory()->checking()->empty()->create(['user_id' => $this->user->id]);
     }
 
     // Cobre: rollback em falha durante operação financeira
     public function test_deposit_rolls_back_on_database_failure(): void
     {
-        $initialBalance = $this->user->wallet->balance;
+        $initialBalance = $this->account->balance;
 
         // Forçar falha após atualizar saldo mas antes de criar a transação
         DB::shouldReceive('transaction')->andReturnUsing(function ($callback) {
@@ -47,8 +49,8 @@ class WalletServiceTest extends TestCase
             DB::swap(app('db'));
 
             // Saldo deve permanecer inalterado
-            $freshWallet = Wallet::find($this->user->wallet->id);
-            $this->assertEquals($initialBalance, $freshWallet->balance);
+            $freshAccount = Account::find($this->account->id);
+            $this->assertEquals($initialBalance, $freshAccount->balance);
         }
     }
 
@@ -57,14 +59,14 @@ class WalletServiceTest extends TestCase
     {
         $this->service->deposit($this->user, 300.00);
 
-        $wallet = $this->user->wallet->fresh();
+        $account = $this->account->fresh();
 
-        $this->assertEquals('300.00', $wallet->balance);
+        $this->assertEquals('300.00', $account->balance);
         $this->assertDatabaseHas('transactions', [
-            'wallet_id' => $wallet->id,
-            'type' => 'credit',
+            'account_id' => $account->id,
+            'type' => 'income',
+            'status' => 'realized',
             'amount' => 300.00,
-            'balance_after' => 300.00,
         ]);
     }
 
@@ -87,20 +89,11 @@ class WalletServiceTest extends TestCase
             // esperado
         }
 
-        $this->assertEquals('100.00', $this->user->wallet->fresh()->balance);
+        $this->assertEquals('100.00', $this->account->fresh()->balance);
         $this->assertDatabaseMissing('transactions', [
-            'wallet_id' => $this->user->wallet->id,
-            'type' => 'debit',
+            'account_id' => $this->account->id,
+            'type' => 'expense',
         ]);
-    }
-
-    public function test_create_wallet_for_user_sets_zero_balance(): void
-    {
-        $newUser = User::factory()->create();
-        $wallet = $this->service->createForUser($newUser);
-
-        $this->assertEquals('0.00', $wallet->balance);
-        $this->assertEquals($newUser->id, $wallet->user_id);
     }
 
     public function test_decimal_precision_is_maintained(): void
@@ -110,6 +103,6 @@ class WalletServiceTest extends TestCase
         $this->service->withdraw($this->user, 50.05);
 
         // 100.10 + 200.20 - 50.05 = 250.25
-        $this->assertEquals('250.25', $this->user->wallet->fresh()->balance);
+        $this->assertEquals('250.25', $this->account->fresh()->balance);
     }
 }

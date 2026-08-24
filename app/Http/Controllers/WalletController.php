@@ -3,17 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TransactionRequest;
+use App\Http\Resources\AccountResource;
 use App\Http\Resources\TransactionResource;
-use App\Http\Resources\WalletResource;
-use App\Services\WalletService;
+use App\Services\AccountService;
+use App\Services\DashboardService;
+use App\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
-#[OA\Tag(name: 'Wallet', description: 'Operações da carteira digital')]
+#[OA\Tag(name: 'Wallet', description: 'Operações da carteira digital (conta principal do usuário)')]
 class WalletController extends Controller
 {
-    public function __construct(private readonly WalletService $walletService) {}
+    public function __construct(
+        private readonly AccountService $accountService,
+        private readonly TransactionService $transactionService,
+        private readonly DashboardService $dashboardService,
+    ) {}
 
     #[OA\Get(
         path: '/api/wallet',
@@ -27,12 +33,12 @@ class WalletController extends Controller
     )]
     public function show(Request $request): JsonResponse
     {
-        $wallet = $request->user()->wallet;
+        $account = $this->accountService->firstAccountFor($request->user());
 
         return response()->json([
             'success' => true,
             'message' => 'Saldo consultado com sucesso.',
-            'data' => new WalletResource($wallet),
+            'data' => new AccountResource($account),
         ]);
     }
 
@@ -58,7 +64,7 @@ class WalletController extends Controller
     )]
     public function deposit(TransactionRequest $request): JsonResponse
     {
-        $transaction = $this->walletService->deposit(
+        $transaction = $this->transactionService->deposit(
             $request->user(),
             (float) $request->validated('amount')
         );
@@ -92,7 +98,7 @@ class WalletController extends Controller
     )]
     public function withdraw(TransactionRequest $request): JsonResponse
     {
-        $transaction = $this->walletService->withdraw(
+        $transaction = $this->transactionService->withdraw(
             $request->user(),
             (float) $request->validated('amount')
         );
@@ -116,7 +122,7 @@ class WalletController extends Controller
     )]
     public function dashboard(Request $request): JsonResponse
     {
-        $data = $this->walletService->getDashboard($request->user());
+        $data = $this->dashboardService->getDashboard($request->user());
 
         return response()->json([
             'success' => true,

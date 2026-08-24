@@ -15,7 +15,9 @@ class TransactionFilterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['nullable', Rule::in(['credit', 'debit'])],
+            'type' => ['nullable', Rule::in(['income', 'expense', 'transfer'])],
+            'status' => ['nullable', Rule::in(['planned', 'realized'])],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'date_from' => ['nullable', 'date', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date', 'date_format:Y-m-d', 'after_or_equal:date_from'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -25,7 +27,9 @@ class TransactionFilterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.in' => 'O tipo deve ser credit ou debit.',
+            'type.in' => 'O tipo deve ser income, expense ou transfer.',
+            'status.in' => 'O status deve ser planned ou realized.',
+            'category_id.exists' => 'Categoria não encontrada.',
             'date_from.date' => 'Data inicial inválida.',
             'date_from.date_format' => 'A data inicial deve estar no formato YYYY-MM-DD.',
             'date_to.date' => 'Data final inválida.',
