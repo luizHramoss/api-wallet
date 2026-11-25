@@ -204,7 +204,8 @@ ROLLBACK automático em qualquer exceção dentro da transação.
 ### Autenticação
 - Senha mínima de 8 caracteres, armazenada com `bcrypt`
 - Token Sanctum invalidado no logout (não apenas expirado)
-- Carteira criada automaticamente com `balance = 0.00` no registro
+- Carteira criada automaticamente com `balance = 0.00` no registro (usuário, conta e token criados na mesma transação)
+- `POST /api/auth/login` e `/api/auth/register` limitados a 5 tentativas/minuto por e-mail+IP e 20/minuto por IP (excedente → 429)
 
 ### Operações Financeiras
 - Valor mínimo: **R$ 0,01**
@@ -480,6 +481,14 @@ curl "http://localhost:8000/api/transactions?type=credit&date_from=2024-01-01&da
 {
   "success": false,
   "message": "Não autenticado. Por favor, faça login."
+}
+```
+
+### Muitas tentativas de login/registro (429)
+```json
+{
+  "success": false,
+  "message": "Too Many Attempts."
 }
 ```
 

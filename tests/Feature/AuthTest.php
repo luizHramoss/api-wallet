@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\AccountService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -93,6 +94,36 @@ class AuthTest extends TestCase
             'password' => 'errada',
         ])->assertStatus(401)
             ->assertJsonPath('success', false);
+    }
+
+    public function test_login_is_rate_limited_per_email_and_ip(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('correta')]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'errada'])
+                ->assertStatus(401);
+        }
+
+        $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'correta'])
+            ->assertStatus(429)
+            ->assertJsonPath('success', false);
+    }
+
+    public function test_register_does_not_leave_orphan_user_when_default_account_fails(): void
+    {
+        $this->mock(AccountService::class)
+            ->shouldReceive('createDefaultForUser')
+            ->andThrow(new \RuntimeException('falha simulada'));
+
+        $this->postJson('/api/auth/register', [
+            'name' => 'Fulano de Tal',
+            'email' => 'orfao@example.com',
+            'password' => 'senha12345',
+            'password_confirmation' => 'senha12345',
+        ])->assertStatus(500);
+
+        $this->assertDatabaseMissing('users', ['email' => 'orfao@example.com']);
     }
 
     // ─── Logout ────────────────────────────────────────────────────────────

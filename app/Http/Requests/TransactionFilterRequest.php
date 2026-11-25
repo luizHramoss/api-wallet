@@ -17,7 +17,11 @@ class TransactionFilterRequest extends FormRequest
         return [
             'type' => ['nullable', Rule::in(['income', 'expense', 'transfer'])],
             'status' => ['nullable', Rule::in(['planned', 'realized'])],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'category_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('categories', 'id')->where('user_id', $this->user()?->id),
+            ],
             'account_id' => [
                 'nullable',
                 'integer',

@@ -28,6 +28,18 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Login/registro: limite mais apertado contra brute force e criação
+        // de contas em massa, por e-mail+IP (não bloqueia outros usuários
+        // atrás do mesmo NAT) e por IP como teto geral.
+        RateLimiter::for('auth', function (Request $request) {
+            $email = mb_strtolower((string) $request->input('email'));
+
+            return [
+                Limit::perMinute(5)->by('auth:'.$email.'|'.$request->ip()),
+                Limit::perMinute(20)->by('auth-ip:'.$request->ip()),
+            ];
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
