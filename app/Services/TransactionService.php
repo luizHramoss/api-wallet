@@ -111,8 +111,17 @@ class TransactionService
         }
 
         return DB::transaction(function () use ($user, $data) {
-            $from = $this->accountService->lockAndFind($user, $data['account_id']);
-            $to = $this->accountService->lockAndFind($user, $data['to_account_id']);
+            // Trava sempre na ordem crescente de id - duas transferências
+            // simultâneas em sentidos opostos (A→B e B→A) travando na ordem
+            // origem/destino podem entrar em deadlock.
+            $fromId = (int) $data['account_id'];
+            $toId = (int) $data['to_account_id'];
+            $locked = [];
+            foreach ([min($fromId, $toId), max($fromId, $toId)] as $id) {
+                $locked[$id] = $this->accountService->lockAndFind($user, $id);
+            }
+            $from = $locked[$fromId];
+            $to = $locked[$toId];
 
             $status = $data['status'] ?? Transaction::STATUS_REALIZED;
             $occurredAt = $data['occurred_at'] ?? Carbon::today();
@@ -179,22 +188,28 @@ class TransactionService
             $newStatus = $data['status'] ?? $oldStatus;
             $newAmount = isset($data['amount']) ? (float) $data['amount'] : $oldAmount;
 
-            if ($oldStatus === Transaction::STATUS_REALIZED) {
-                $transaction->isIncome()
-                    ? $this->accountService->debit($account, $oldAmount)
-                    : $this->accountService->credit($account, $oldAmount);
-            }
+            // Aplica só a diferença líquida no saldo. Desfazer o impacto antigo
+            // e reaplicar o novo em dois passos faz o debit() checar o saldo
+            // num estado intermediário - ex: receita de 100 editada para 150
+            // com saldo atual 30 falhava com "saldo insuficiente" mesmo o
+            // efeito final sendo +50.
+            $sign = $transaction->isIncome() ? 1 : -1;
+            $oldImpact = $oldStatus === Transaction::STATUS_REALIZED ? $sign * $oldAmount : 0.0;
+            $newImpact = $newStatus === Transaction::STATUS_REALIZED ? $sign * $newAmount : 0.0;
+            $delta = round($newImpact - $oldImpact, 2);
 
-            if ($newStatus === Transaction::STATUS_REALIZED) {
-                $transaction->isIncome()
-                    ? $this->accountService->credit($account, $newAmount)
-                    : $this->accountService->debit($account, $newAmount);
+            if ($delta > 0) {
+                $this->accountService->credit($account, $delta);
+            } elseif ($delta < 0) {
+                $this->accountService->debit($account, -$delta);
             }
 
             $transaction->fill([
                 'category_id' => array_key_exists('category_id', $data) ? $data['category_id'] : $transaction->category_id,
                 'amount' => $newAmount,
-                'description' => $data['description'] ?? $transaction->description,
+                // array_key_exists (não ??) - description=null é um valor
+                // válido pra limpar a descrição, não "campo ausente".
+                'description' => array_key_exists('description', $data) ? $data['description'] : $transaction->description,
                 'occurred_at' => $data['occurred_at'] ?? $transaction->occurred_at,
                 'status' => $newStatus,
             ]);

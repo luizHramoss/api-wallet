@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\RecurringBill;
 use App\Models\Transaction;
 use App\Models\User;
@@ -290,6 +291,16 @@ class TransactionTest extends TestCase
     }
 
     // ─── Paginação ─────────────────────────────────────────────────────────
+
+    public function test_filter_by_another_users_category_returns_422(): void
+    {
+        $foreignCategory = Category::factory()->expense()->create(['user_id' => $this->userB->id]);
+
+        $this->withToken($this->tokenA)
+            ->getJson('/api/transactions?category_id='.$foreignCategory->id)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('category_id');
+    }
 
     public function test_pagination_per_page_is_respected(): void
     {

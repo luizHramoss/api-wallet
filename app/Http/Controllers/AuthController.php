@@ -10,6 +10,7 @@ use App\Services\AccountService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Auth', description: 'Autenticação de usuários')]
@@ -40,11 +41,14 @@ class AuthController extends Controller
     )]
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::create($request->validated());
+        // Usuário, conta padrão e token juntos - sem isso uma falha ao criar
+        // a conta deixava um usuário órfão com o e-mail já "ocupado".
+        [$user, $token] = DB::transaction(function () use ($request) {
+            $user = User::create($request->validated());
+            $this->accountService->createDefaultForUser($user);
 
-        $this->accountService->createDefaultForUser($user);
-
-        $token = $user->createToken('api-token')->plainTextToken;
+            return [$user, $user->createToken('api-token')->plainTextToken];
+        });
 
         return response()->json([
             'success' => true,

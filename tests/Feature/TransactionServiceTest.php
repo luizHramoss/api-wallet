@@ -168,6 +168,74 @@ class TransactionServiceTest extends TestCase
         $this->assertEquals('120.00', $this->account->fresh()->balance);
     }
 
+    // Regressão: reverter o valor antigo antes de aplicar o novo checava o
+    // saldo num estado intermediário e rejeitava edições com efeito líquido
+    // positivo.
+    public function test_increasing_an_income_already_spent_does_not_fail_on_intermediate_balance(): void
+    {
+        $income = $this->service->create($this->user, ['account_id' => $this->account->id, 'type' => Transaction::TYPE_INCOME, 'amount' => 100.00]);
+        $this->service->create($this->user, ['account_id' => $this->account->id, 'type' => Transaction::TYPE_EXPENSE, 'amount' => 70.00]);
+
+        $this->service->update($income, ['amount' => 150.00]);
+
+        // 150 - 70 = 80
+        $this->assertEquals('80.00', $this->account->fresh()->balance);
+    }
+
+    public function test_reducing_an_income_below_what_was_spent_still_fails_and_keeps_balance(): void
+    {
+        $income = $this->service->create($this->user, ['account_id' => $this->account->id, 'type' => Transaction::TYPE_INCOME, 'amount' => 100.00]);
+        $this->service->create($this->user, ['account_id' => $this->account->id, 'type' => Transaction::TYPE_EXPENSE, 'amount' => 70.00]);
+
+        try {
+            $this->service->update($income, ['amount' => 20.00]);
+            $this->fail('Esperava InsufficientBalanceException.');
+        } catch (InsufficientBalanceException) {
+        }
+
+        $this->assertEquals('30.00', $this->account->fresh()->balance);
+        $this->assertEquals('100.00', $income->fresh()->amount);
+    }
+
+    public function test_update_realized_to_planned_reverts_balance_impact(): void
+    {
+        $income = $this->service->create($this->user, ['account_id' => $this->account->id, 'type' => Transaction::TYPE_INCOME, 'amount' => 100.00]);
+
+        $this->service->update($income, ['status' => Transaction::STATUS_PLANNED]);
+
+        $this->assertEquals('0.00', $this->account->fresh()->balance);
+    }
+
+    public function test_update_can_clear_description(): void
+    {
+        $transaction = $this->service->create($this->user, [
+            'account_id' => $this->account->id,
+            'type' => Transaction::TYPE_INCOME,
+            'amount' => 10.00,
+            'description' => 'Salário',
+        ]);
+
+        $this->assertNull($this->service->update($transaction, ['description' => null])->description);
+        $this->assertNull($this->service->update($transaction->fresh(), ['amount' => 20.00])->description);
+    }
+
+    public function test_transfer_from_higher_to_lower_account_id_moves_balance_correctly(): void
+    {
+        $other = Account::factory()->checking()->withBalance(500)->create(['user_id' => $this->user->id]);
+
+        $out = $this->service->create($this->user, [
+            'account_id' => $other->id,
+            'to_account_id' => $this->account->id,
+            'type' => Transaction::TYPE_TRANSFER,
+            'amount' => 200.00,
+        ]);
+
+        $this->assertEquals($other->id, $out->account_id);
+        $this->assertEquals(Transaction::TRANSFER_OUT, $out->transfer_direction);
+        $this->assertEquals('300.00', $other->fresh()->balance);
+        $this->assertEquals('200.00', $this->account->fresh()->balance);
+    }
+
     public function test_delete_reverses_balance_impact(): void
     {
         $transaction = $this->service->create($this->user, [

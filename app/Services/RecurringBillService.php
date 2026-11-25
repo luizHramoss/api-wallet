@@ -7,6 +7,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class RecurringBillService
 {
@@ -68,7 +69,10 @@ class RecurringBillService
         RecurringBill::where('status', RecurringBill::STATUS_ACTIVE)
             ->chunkById(50, function (Collection $bills) use (&$total, $horizon) {
                 foreach ($bills as $bill) {
-                    $total += $this->generateForBill($bill, $horizon);
+                    // Ocorrências + last_generated_at gravados atomicamente:
+                    // se o processo cair no meio, nada fica gravado sem o
+                    // cursor correspondente, e a próxima execução não duplica.
+                    $total += DB::transaction(fn () => $this->generateForBill($bill, $horizon));
                 }
             });
 

@@ -94,6 +94,31 @@ class RecurringBillServiceTest extends TestCase
         );
     }
 
+    public function test_failure_mid_generation_rolls_back_occurrences_and_cursor(): void
+    {
+        $bill = $this->makeBill();
+
+        // Falha ao gravar o cursor depois das ocorrências já criadas.
+        RecurringBill::saving(function () {
+            throw new \RuntimeException('falha simulada');
+        });
+
+        try {
+            $this->service->generateDueOccurrences();
+            $this->fail('Esperava RuntimeException.');
+        } catch (\RuntimeException) {
+        }
+
+        RecurringBill::flushEventListeners();
+
+        $this->assertSame(0, Transaction::where('recurring_bill_id', $bill->id)->count());
+        $this->assertNull($bill->fresh()->last_generated_at);
+
+        // Re-execução depois da falha gera normalmente, sem duplicar.
+        $generated = $this->service->generateDueOccurrences();
+        $this->assertSame($generated, Transaction::where('recurring_bill_id', $bill->id)->count());
+    }
+
     public function test_paused_bills_are_not_generated(): void
     {
         $this->makeBill(['status' => RecurringBill::STATUS_PAUSED]);
